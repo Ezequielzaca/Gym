@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lucho Gym · Registro de Entrenamiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0f14;
+  --panel:#151821;
+  --panel-2:#1c2029;
+  --line:#2a2f3b;
+  --text:#f2f4f8;
+  --muted:#8b93a3;
+  --accent:#ffc300;
+  --accent-dim:#4a3800;
+  --teal:#3fb8af;
+  --teal-dim:#14403c;
+  --danger:#ff4d4d;
+  --ok:#4ad187;
+  --amber:#ffb020;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+body{min-height:100vh;padding-bottom:78px;}
+h1,h2,h3,.display{font-family:'Bebas Neue',sans-serif;letter-spacing:.03em;}
+.mono{font-family:'Roboto Mono',monospace;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d0f14 80%,rgba(13,15,20,0));backdrop-filter:blur(6px);padding:16px 18px 10px;display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--accent),#cc9100);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:15px;color:#231a00;flex-shrink:0;box-shadow:0 4px 12px rgba(255,195,0,.3);}
+.brand .title{font-size:22px;line-height:1;}
+.brand .sub{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:2px;}
+.top-actions{display:flex;gap:8px;align-items:center;}
+.pill{font-size:11px;padding:5px 10px;border-radius:20px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);}
+.pill.role-admin{background:var(--accent-dim);color:#ffb28a;border-color:transparent;}
+.iconbtn{width:34px;height:34px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:15px;}
+
+/* ---------- layout ---------- */
+.screen{display:none;padding:6px 18px 24px;max-width:640px;margin:0 auto;}
+.screen.active{display:block;animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.section-title{font-size:26px;margin:18px 0 12px;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-tight{padding:12px 14px;}
+.muted{color:var(--muted);}
+.small{font-size:12px;}
+.row{display:flex;gap:10px;align-items:center;}
+.row.between{justify-content:space-between;}
+.wrap{flex-wrap:wrap;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;border-radius:12px;border:none;font-weight:700;font-size:14px;}
+.btn-accent{background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;box-shadow:0 4px 14px rgba(255,195,0,.25);}
+.btn-teal{background:var(--teal);color:#062421;}
+.btn-ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line);}
+.btn-danger{background:rgba(255,77,77,.12);color:var(--danger);border:1px solid rgba(255,77,77,.35);}
+.btn-block{width:100%;}
+.btn-sm{padding:8px 12px;font-size:12.5px;border-radius:9px;}
+.btn:disabled{opacity:.4;}
+
+/* pastillas de series (kg / rep) estilo gym tracker */
+.pill-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.set-pill{border:1px solid var(--line);border-radius:9px;padding:4px 8px;font-family:'Roboto Mono';font-size:10px;color:var(--muted);background:var(--panel);display:flex;flex-direction:column;align-items:center;line-height:1.3;min-width:44px;}
+.set-pill b{color:var(--accent);font-size:12px;letter-spacing:.02em;}
+
+/* ranking mensual */
+.rank-item{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);}
+.rank-item:last-child{border-bottom:none;}
+.rank-item.me{background:rgba(255,195,0,.07);border-radius:10px;padding-left:8px;padding-right:8px;}
+.rank-pos{width:30px;text-align:center;font-family:'Bebas Neue';font-size:19px;color:var(--muted);flex-shrink:0;}
+.rank-days{font-family:'Roboto Mono';font-weight:700;color:var(--accent);font-size:14px;white-space:nowrap;}
+.rank-bar{height:5px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin-top:5px;}
+.rank-bar > div{height:100%;background:linear-gradient(90deg,var(--accent),#ffe066);}
+
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:14.5px;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+label.field{display:block;margin-bottom:12px;}
+label.field span{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+
+/* ---------- auth ---------- */
+#screen-auth{max-width:400px;padding-top:8vh;}
+.auth-hero{text-align:center;margin-bottom:28px;}
+.auth-hero .mark-big{width:64px;height:64px;border-radius:18px;background:linear-gradient(145deg,var(--accent),#cc9100);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:26px;color:#231a00;box-shadow:0 8px 24px rgba(255,195,0,.35);}
+.auth-hero h1{font-size:34px;margin:0;}
+.auth-hero p{color:var(--muted);font-size:13px;margin-top:4px;}
+.tabbar{display:flex;background:var(--panel-2);border-radius:12px;padding:4px;margin-bottom:18px;}
+.tabbar button{flex:1;background:none;border:none;color:var(--muted);padding:10px;border-radius:9px;font-weight:700;font-size:13.5px;}
+.tabbar button.active{background:var(--accent);color:#231a00;}
+.err-msg{background:rgba(255,77,77,.1);border:1px solid rgba(255,77,77,.3);color:#ffb0b0;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
+
+/* ---------- bottom nav ---------- */
+.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--panel);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));}
+.navbtn{flex:1;background:none;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;font-size:10px;font-weight:600;border-radius:10px;}
+.navbtn .ic{font-size:19px;}
+.navbtn.active{color:var(--accent);}
+
+/* ---------- disco / mancuerna picker (signature element) ---------- */
+.bar-visual{display:flex;align-items:center;justify-content:center;gap:2px;padding:14px 6px;background:radial-gradient(ellipse at center, #202b35 0%, #161f27 70%);border-radius:12px;margin-bottom:12px;min-height:90px;}
+.bar-shaft{height:8px;flex:1;max-width:40px;background:linear-gradient(180deg,#6b7680,#3d454d);border-radius:3px;}
+.plate{border-radius:6px;background:linear-gradient(180deg,var(--accent),#cc9100);display:flex;align-items:center;justify-content:center;color:#231a00;font-family:'Roboto Mono';font-weight:700;flex-shrink:0;}
+.plate.small{background:linear-gradient(180deg,var(--teal),#1f7a72);color:#062421;}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.chip{padding:8px 12px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--text);font-family:'Roboto Mono';}
+.chip.active{background:var(--accent);color:#231a00;border-color:transparent;}
+.chip.teal.active{background:var(--teal);color:#062421;}
+
+/* ---------- misc components ---------- */
+.badge{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.03em;}
+.badge.ok{background:rgba(74,209,135,.15);color:var(--ok);}
+.badge.pend{background:rgba(255,195,0,.15);color:#ffd766;}
+.badge.off{background:var(--panel-2);color:var(--muted);}
+.avatar{width:38px;height:38px;border-radius:10px;background:var(--teal-dim);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;}
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);}
+.list-item:last-child{border-bottom:none;}
+.exercise-block{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--panel-2);}
+.set-row{display:grid;grid-template-columns:28px 1fr 1fr 30px;gap:8px;align-items:center;margin-bottom:6px;}
+.set-row .idx{color:var(--muted);font-size:12px;font-family:'Roboto Mono';text-align:center;}
+.remove-x{width:26px;height:26px;border-radius:7px;background:rgba(255,77,77,.12);color:var(--danger);border:none;font-size:13px;}
+.fab{position:fixed;bottom:86px;right:18px;z-index:55;width:56px;height:56px;border-radius:16px;background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;border:none;font-size:26px;box-shadow:0 8px 20px rgba(255,195,0,.4);}
+.empty{text-align:center;padding:30px 10px;color:var(--muted);}
+.empty .ic{font-size:34px;margin-bottom:8px;}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{aspect-ratio:1;border-radius:10px;background:var(--panel-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-family:'Roboto Mono';position:relative;border:1px solid transparent;}
+.cal-cell .dots{display:flex;gap:3px;height:5px;}
+.cal-cell .dots i{width:5px;height:5px;border-radius:50%;display:block;}
+.cal-cell .dots i.d-log{background:var(--ok);}
+.cal-cell .dots i.d-plan{background:#5aa9ff;}
+.cal-cell.today{background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;font-weight:700;box-shadow:0 4px 12px rgba(255,195,0,.35);}
+.cal-cell.today .dots i.d-log{background:#175c36;}
+.cal-cell.today .dots i.d-plan{background:#1d4e85;}
+.cal-cell.empty-cell{background:none;}
+.cal-dow{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;}
+.progress-mini{height:6px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin-top:6px;}
+.progress-mini > div{height:100%;background:var(--accent);}
+.modal-bg{position:fixed;inset:0;background:rgba(6,9,12,.7);z-index:80;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.active{display:flex;}
+.modal{background:var(--panel);width:100%;max-width:640px;max-height:88vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));animation:slideup .25s ease;}
+@keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
+.modal-handle{width:40px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 14px;}
+.seg{display:flex;background:var(--panel-2);border-radius:10px;padding:3px;margin-bottom:14px;}
+.seg button{flex:1;background:none;border:none;color:var(--muted);padding:9px;border-radius:7px;font-size:12.5px;font-weight:700;}
+.seg button.active{background:var(--teal);color:#062421;}
+.hidden{display:none !important;}
+.pain-toggle{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:4px;}
+.switch{width:38px;height:22px;border-radius:20px;background:var(--line);position:relative;flex-shrink:0;transition:.2s;}
+.switch.on{background:var(--danger);}
+.switch .dot{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:.2s;}
+.switch.on .dot{left:18px;}
+.rec-card{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:10px;background:var(--panel-2);margin-bottom:8px;}
+.rec-card .val{font-family:'Roboto Mono';font-weight:700;color:var(--accent);font-size:16px;}
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH ===================== -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-hero">
+    <div class="mark-big">LG</div>
+    <h1>LUCHO GYM</h1>
+    <p>Entrenamiento con Lucho · registrá tu progreso</p>
+  </div>
+  <div class="err-msg" id="authErr"></div>
+  <div class="tabbar">
+    <button class="active" id="tabLogin" onclick="setAuthTab('login')">Iniciar sesión</button>
+    <button id="tabRegister" onclick="setAuthTab('register')">Crear cuenta</button>
+    <button id="tabAdmin" onclick="setAuthTab('admin')">Administrador</button>
+  </div>
+
+  <div id="loginForm">
+    <label class="field"><span>Email</span><input type="email" id="loginEmail" placeholder="tu@email.com"></label>
+    <label class="field"><span>Contraseña</span><input type="password" id="loginPass" placeholder="••••••••"></label>
+    <button class="btn btn-accent btn-block" onclick="doLogin()">Ingresar</button>
+  </div>
+
+  <div id="registerForm" class="hidden">
+    <label class="field"><span>Seleccioná tu nombre en la lista de Luciano</span>
+      <select id="regRosterSelect"><option value="">Cargando alumnos…</option></select>
+    </label>
+    <label class="field"><span>Email</span><input type="email" id="regEmail" placeholder="tu@email.com"></label>
+    <label class="field"><span>Contraseña</span><input type="password" id="regPass" placeholder="Mínimo 6 caracteres"></label>
+    <button class="btn btn-accent btn-block" onclick="doRegister()">Crear cuenta</button>
+    <p class="small muted" style="text-align:center;margin-top:10px;">¿No aparece tu nombre? Pedile a Luciano que te agregue primero.</p>
+  </div>
+
+  <div id="adminLoginForm" class="hidden">
+    <label class="field"><span>Usuario administrador</span><input type="text" id="adminUser" placeholder="Usuario" autocapitalize="off"></label>
+    <label class="field"><span>Contraseña</span><input type="password" id="adminPass" placeholder="Contraseña"></label>
+    <button class="btn btn-accent btn-block" onclick="doAdminLogin()">Ingresar como administrador</button>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div id="appShell" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">LG</div>
+      <div>
+        <div class="title">Lucho Gym</div>
+        <div class="sub" id="userSubtitle">—</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="pill" id="rolePill">alumno</span>
+      <button class="iconbtn" onclick="manualRefresh()" title="Actualizar">⟳</button>
+      <button class="iconbtn" onclick="doLogout()" title="Salir">⎋</button>
+    </div>
+  </div>
+
+  <!-- ---------- ALUMNO: INICIO ---------- -->
+  <div id="screen-alumno-home" class="screen">
+    <div class="section-title">Hoy</div>
+    <div class="card" id="alumnoTodayCard"></div>
+    <div class="section-title">Próximas actividades</div>
+    <div id="alumnoUpcoming"></div>
+    <div class="section-title">🏆 Top del mes</div>
+    <div class="card" id="alumnoRankingMes"></div>
+    <div class="section-title">Récords rápidos</div>
+    <div id="alumnoRecordsMini"></div>
+  </div>
+
+  <!-- ---------- ALUMNO: HISTORIAL ---------- -->
+  <div id="screen-alumno-historial" class="screen">
+    <div class="section-title">Historial</div>
+    <div class="seg">
+      <button class="active" onclick="setHistView('calendario',this)">Calendario</button>
+      <button onclick="setHistView('resumen',this)">Resumen</button>
+    </div>
+    <div id="histCalendarWrap">
+      <div class="card">
+        <div class="row between" style="margin-bottom:10px;">
+          <button class="iconbtn" onclick="calShift(-1)">‹</button>
+          <div class="display" id="calLabel" style="font-size:20px;"></div>
+          <button class="iconbtn" onclick="calShift(1)">›</button>
+        </div>
+        <div class="calendar-grid" id="calDowRow"></div>
+        <div class="calendar-grid" id="calGrid" style="margin-top:4px;"></div>
+      </div>
+      <div class="card" id="calDayDetail"></div>
+    </div>
+    <div id="histResumenWrap" class="hidden"></div>
+  </div>
+
+  <!-- ---------- ALUMNO: RÉCORDS ---------- -->
+  <div id="screen-alumno-records" class="screen">
+    <div class="section-title">Máximos personales</div>
+    <div id="recordsList"></div>
+  </div>
+
+  <!-- ---------- ADMIN: INICIO ---------- -->
+  <div id="screen-admin-home" class="screen">
+    <div class="section-title">Resumen de hoy</div>
+    <div id="adminTodaySummary"></div>
+    <div class="section-title">🏆 Top del mes</div>
+    <div class="card" id="adminRankingMes"></div>
+  </div>
+
+  <!-- ---------- ADMIN: ALUMNOS ---------- -->
+  <div id="screen-admin-alumnos" class="screen">
+    <div class="row between" style="margin:18px 0 12px;">
+      <div class="section-title" style="margin:0;">Alumnos</div>
+      <button class="btn btn-accent btn-sm" onclick="openAddAlumno()">+ Agregar</button>
+    </div>
+    <div id="adminAlumnosList"></div>
+  </div>
+
+  <!-- ---------- ADMIN: DETALLE POR ALUMNO ---------- -->
+  <div id="screen-admin-detalle" class="screen">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen(state.role==='admin'?'admin-alumnos':'alumno-home')" style="margin:16px 0 4px;">‹ Volver</button>
+    <div class="section-title" id="detalleNombre">Alumno</div>
+    <div class="seg">
+      <button class="active" onclick="setDetView('calendario',this)">Calendario</button>
+      <button onclick="setDetView('records',this)">Récords</button>
+    </div>
+    <div id="detCalendarWrap">
+      <div class="card">
+        <div class="row between" style="margin-bottom:10px;">
+          <button class="iconbtn" onclick="detCalShift(-1)">‹</button>
+          <div class="display" id="detCalLabel" style="font-size:20px;"></div>
+          <button class="iconbtn" onclick="detCalShift(1)">›</button>
+        </div>
+        <div class="calendar-grid" id="detCalDowRow"></div>
+        <div class="calendar-grid" id="detCalGrid" style="margin-top:4px;"></div>
+      </div>
+      <div class="card" id="detDayDetail"></div>
+    </div>
+    <div id="detRecordsWrap" class="hidden"></div>
+  </div>
+
+  <!-- ---------- ADMIN: PLANIFICACIÓN ---------- -->
+  <div id="screen-admin-plan" class="screen">
+    <div class="section-title">Planificación</div>
+    <div class="card card-tight">
+      <label class="field" style="margin-bottom:8px;"><span>Fecha</span><input type="date" id="planDate" onchange="renderPlanDay()"></label>
+    </div>
+    <div id="planDayList"></div>
+    <button class="btn btn-teal btn-block" onclick="openAssignActivity()" style="margin-top:10px;">+ Asignar actividad</button>
+  </div>
+
+  <!-- ---------- ADMIN: EJERCICIOS ---------- -->
+  <div id="screen-admin-ejercicios" class="screen">
+    <div class="row between" style="margin:18px 0 12px;">
+      <div class="section-title" style="margin:0;">Base de ejercicios</div>
+      <button class="btn btn-accent btn-sm" onclick="openAddEjercicio()">+ Nuevo</button>
+    </div>
+    <div id="adminEjerciciosList"></div>
+  </div>
+
+  <div class="bottomnav" id="bottomNav"></div>
+  <button class="fab hidden" id="fabLoad" onclick="openLoadDay()" title="Cargar día">＋</button>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
+
+<script>
+/* ======================================================================
+   ALMACENAMIENTO (versión de prueba, sin Firebase)
+   Esta versión guarda todo con window.storage (persistencia propia de
+   los artifacts de Claude) para que puedas probar la app ya mismo.
+   Es una data compartida entre quien use este artifact, y las
+   contraseñas no van encriptadas: usala solo para probar el flujo con
+   Luciano y algún alumno de prueba. Cuando tengas el proyecto de
+   Firebase armado, retomamos la versión conectada a Firebase.
+====================================================================== */
+const DB = { usuarios:{}, ejercicios:{}, registros:{}, planificacion:{} };
+let dbReady = false;
+
+async function storageGet(key){
+  try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function storageSet(key, obj){
+  try{ await window.storage.set(key, JSON.stringify(obj), true); }
+  catch(e){ console.error('No se pudo guardar', key, e); }
+}
+async function loadAll(){
+  DB.usuarios = (await storageGet('usuarios')) || {};
+  DB.ejercicios = (await storageGet('ejercicios')) || {};
+  DB.registros = (await storageGet('registros')) || {};
+  DB.planificacion = (await storageGet('planificacion')) || {};
+  if(Object.keys(DB.ejercicios).length===0){
+    const seed={};
+    SEED_EJERCICIOS.forEach(([nombre,categoria],i)=>{ seed['e'+i+'_'+Date.now()]={nombre,categoria}; });
+    DB.ejercicios = seed;
+    await storageSet('ejercicios', DB.ejercicios);
+  }
+  dbReady = true;
+}
+function rebuildStateRefs(){
+  state.roster = DB.usuarios;
+  state.ejercicios = DB.ejercicios;
+  state.registros = DB.registros;
+  state.planificacion = DB.planificacion;
+}
+function uid(prefix){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* Credenciales de acceso para el administrador (Luciano). */
+const ADMIN_USER = "ADM2026";
+const ADMIN_PASS = "ADM.2026";
+
+/* ======================================================================
+   ESTADO GLOBAL
+====================================================================== */
+const state = {
+  user: null,        // {uid}
+  role: null,         // 'admin' | 'alumno'
+  profile: null,      // {nombre, apellido, email, rol}
+  roster: {},         // alumnos completos {uid: perfil}
+  ejercicios: {},     // {id: {nombre, categoria}}
+  registros: {},      // {uid: {fecha: {...}}}
+  planificacion: {},  // {uid: {fecha: {...}}}
+  calMonth: new Date(),
+  detCalMonth: new Date(),
+  detUid: null,
+  histView: 'calendario',
+  detView: 'calendario',
+  calSelectedDate: null,
+  detSelectedDate: null
+};
+
+const CATEGORIAS = ["Calentamiento","Abdominales","Espinales/Lumbares","Piernas","Pecho/Banco","Espalda","Hombro","Bíceps","Tríceps","CrossFit/Funcional","Circuito"];
+
+const SEED_EJERCICIOS = [
+  ["Trote suave / cinta","Calentamiento"],["Saltos de tijera (jumping jacks)","Calentamiento"],["Rotación de hombros","Calentamiento"],
+  ["Círculos de cadera","Calentamiento"],["Sentadilla sin peso","Calentamiento"],["Zancada con giro de tronco","Calentamiento"],
+  ["Salto de cuerda","Calentamiento"],["Plancha dinámica","Calentamiento"],["Movilidad de tobillo","Calentamiento"],["Perro-pájaro (bird dog)","Calentamiento"],
+  ["Crunch abdominal","Abdominales"],["Plancha","Abdominales"],["Elevación de piernas","Abdominales"],
+  ["Abdominales en polea","Abdominales"],["Rueda abdominal","Abdominales"],["Sit-up","Abdominales"],
+  ["Hiperextensiones","Espinales/Lumbares"],["Peso muerto rumano","Espinales/Lumbares"],["Buenos días","Espinales/Lumbares"],["Superman","Espinales/Lumbares"],
+  ["Sentadilla con barra","Piernas"],["Sentadilla goblet","Piernas"],["Estocadas","Piernas"],["Peso muerto","Piernas"],
+  ["Prensa de piernas","Piernas"],["Zancadas caminando","Piernas"],["Extensión de cuádriceps","Piernas"],["Curl femoral","Piernas"],["Sentadilla con salto","Piernas"],
+  ["Press banca plano","Pecho/Banco"],["Press banca inclinado","Pecho/Banco"],["Press banca declinado","Pecho/Banco"],["Aperturas con mancuerna","Pecho/Banco"],
+  ["Flexiones de brazos","Pecho/Banco"],["Flexiones inclinadas","Pecho/Banco"],
+  ["Press militar","Hombro"],["Elevaciones laterales","Hombro"],["Elevaciones frontales","Hombro"],["Press mancuerna hombro","Hombro"],["Face pull","Hombro"],
+  ["Dominadas","Espalda"],["Remo con barra","Espalda"],["Remo en polea","Espalda"],["Jalón al pecho","Espalda"],["Remo con mancuerna","Espalda"],
+  ["Curl bíceps con barra","Bíceps"],["Curl con mancuerna","Bíceps"],["Curl martillo","Bíceps"],
+  ["Press francés","Tríceps"],["Extensión de tríceps en polea","Tríceps"],["Fondos de tríceps","Tríceps"],["Flexiones diamante","Tríceps"],
+  ["Wall ball","CrossFit/Funcional"],["Kettlebell swing","CrossFit/Funcional"],["Cargada de potencia (power clean)","CrossFit/Funcional"],
+  ["Arranque (snatch)","CrossFit/Funcional"],["Cargada y envión (clean and jerk)","CrossFit/Funcional"],["Thruster","CrossFit/Funcional"],
+  ["Remo en máquina (rower)","CrossFit/Funcional"],["Burpees","CrossFit/Funcional"],["Toes to bar","CrossFit/Funcional"],["Doble salto de soga","CrossFit/Funcional"],
+  ["Vallas","Circuito"],["Escalera de velocidad","Circuito"],["Salto al cajón","Circuito"],["Pelota medicinal","Circuito"],["Mountain climbers","Circuito"]
+];
+
+const BLOQUE_PRESETS = ["Entrada en calor","Piernas","Pecho y Hombro","Espalda y Bíceps","Tríceps y Hombro","Core / Abdominales","CrossFit / Circuito","Vuelta a la calma"];
+
+const DISCOS = [2.5,5,10,15,20];
+const MANCUERNAS = [2,5,7,10,12,15,20,25];
+
+function getBloques(dia){
+  if(!dia) return [];
+  if(dia.bloques) return dia.bloques;
+  if(dia.ejercicios) return [{nombre:'Entrenamiento', ejercicios:dia.ejercicios}];
+  return [];
+}
+function exerciseOptionsGrouped(selectedId){
+  const porCat = {};
+  Object.entries(state.ejercicios).forEach(([id,e])=>{ (porCat[e.categoria]=porCat[e.categoria]||[]).push([id,e]); });
+  return CATEGORIAS.filter(c=>porCat[c]).map(cat=>`<optgroup label="${cat}">${porCat[cat].map(([id,e])=>`<option value="${id}" ${id===selectedId?'selected':''}>${e.nombre}</option>`).join('')}</optgroup>`).join('');
+}
+
+/* ======================================================================
+   UTILIDADES
+====================================================================== */
+function fmtDate(d){ // yyyy-mm-dd
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
+}
+function todayStr(){ return fmtDate(new Date()); }
+function initials(nombre,apellido){ return ((nombre?.[0]||'')+(apellido?.[0]||'')).toUpperCase(); }
+function monthLabel(d){ const s = d.toLocaleDateString('es-AR',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); }
+function showModal(html){ document.getElementById('modalBody').innerHTML = '<div class="modal-handle"></div>'+html; document.getElementById('modalBg').classList.add('active'); }
+function closeModal(){ document.getElementById('modalBg').classList.remove('active'); document.getElementById('modalBody').innerHTML=''; }
+document.getElementById('modalBg').addEventListener('click',e=>{ if(e.target.id==='modalBg') closeModal(); });
+
+function setAuthTab(tab){
+  hideAuthErr();
+  document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active',tab==='register');
+  document.getElementById('tabAdmin').classList.toggle('active',tab==='admin');
+  document.getElementById('loginForm').classList.toggle('hidden',tab!=='login');
+  document.getElementById('registerForm').classList.toggle('hidden',tab!=='register');
+  document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
+  if(tab==='register') loadRosterForRegister();
+}
+function showAuthErr(msg){ const e=document.getElementById('authErr'); e.textContent=msg; e.style.display='block'; }
+function hideAuthErr(){ document.getElementById('authErr').style.display='none'; }
+
+/* ======================================================================
+   AUTH: LOGIN / REGISTRO (local, sin Firebase)
+====================================================================== */
+function loadRosterForRegister(){
+  const sel = document.getElementById('regRosterSelect');
+  if(!dbReady){ sel.innerHTML='<option value="">Cargando…</option>'; return; }
+  const opciones = Object.entries(DB.usuarios).filter(([id,p])=>!p.claimed);
+  if(!opciones.length){ sel.innerHTML='<option value="">No hay alumnos cargados por Luciano todavía</option>'; return; }
+  sel.innerHTML = '<option value="">Elegí tu nombre…</option>' + opciones.map(([id,p])=>`<option value="${id}">${p.apellido}, ${p.nombre}</option>`).join('');
+}
+
+async function doRegister(){
+  hideAuthErr();
+  const rosterUid = document.getElementById('regRosterSelect').value;
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  if(!rosterUid){ showAuthErr('Elegí tu nombre en la lista.'); return; }
+  if(!email || !pass || pass.length<6){ showAuthErr('Completá email y una contraseña de al menos 6 caracteres.'); return; }
+  const yaExiste = Object.values(DB.usuarios).some(p=>p.email && p.email.toLowerCase()===email.toLowerCase());
+  if(yaExiste){ showAuthErr('Ese email ya está registrado.'); return; }
+  const perfil = DB.usuarios[rosterUid];
+  if(!perfil){ showAuthErr('Ese registro ya no existe, actualizá la página.'); return; }
+  DB.usuarios[rosterUid] = {...perfil, email, password:pass, claimed:true};
+  await storageSet('usuarios', DB.usuarios);
+  rebuildStateRefs();
+  state.user = {uid:rosterUid};
+  state.profile = DB.usuarios[rosterUid];
+  state.role = 'alumno';
+  enterApp();
+}
+
+function doLogin(){
+  hideAuthErr();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email||!pass){ showAuthErr('Completá email y contraseña.'); return; }
+  const match = Object.entries(DB.usuarios).find(([id,p])=> p.email && p.email.toLowerCase()===email.toLowerCase() && p.password===pass);
+  if(!match){ showAuthErr('Email o contraseña incorrectos.'); return; }
+  state.user = {uid:match[0]};
+  state.profile = match[1];
+  state.role = 'alumno';
+  enterApp();
+}
+
+function doLogout(){
+  stopPolling();
+  state.user=null; state.role=null; state.profile=null;
+  document.getElementById('appShell').classList.add('hidden');
+  document.getElementById('screen-auth').classList.add('active');
+  setAuthTab('login');
+}
+
+function doAdminLogin(){
+  hideAuthErr();
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value;
+  if(u !== ADMIN_USER || p !== ADMIN_PASS){ showAuthErr('Usuario o contraseña incorrectos.'); return; }
+  state.user = {uid:'admin-luciano'};
+  state.profile = {nombre:'Luciano',apellido:'(Admin)',rol:'admin'};
+  state.role = 'admin';
+  enterApp();
+}
+
+/* ======================================================================
+   CARGA INICIAL
+====================================================================== */
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await loadAll();
+  rebuildStateRefs();
+  if(document.getElementById('tabRegister').classList.contains('active')) loadRosterForRegister();
+});
+
+function enterApp(){
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('appShell').classList.remove('hidden');
+  document.getElementById('userSubtitle').textContent = (state.profile.nombre+' '+state.profile.apellido).trim();
+  const pill = document.getElementById('rolePill');
+  pill.textContent = state.role==='admin' ? 'Lucho · admin' : 'alumno';
+  pill.classList.toggle('role-admin', state.role==='admin');
+  document.getElementById('fabLoad').classList.toggle('hidden', state.role!=='alumno');
+  buildBottomNav();
+  showScreen(state.role==='admin' ? 'admin-home' : 'alumno-home');
+  startPolling();
+}
+
+/* Como esta versión de prueba no tiene Firebase en tiempo real, cada
+   cierto tiempo volvemos a leer el almacenamiento compartido para que
+   los cambios de Luciano y del alumno se reflejen sin recargar la página. */
+let pollTimer = null;
+function startPolling(){
+  if(pollTimer) return;
+  pollTimer = setInterval(async ()=>{
+    await loadAll();
+    rebuildStateRefs();
+    refreshCurrentScreen();
+  }, 15000);
+}
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+async function manualRefresh(){
+  const btn = event && event.currentTarget;
+  if(btn) btn.style.opacity = '.4';
+  await loadAll();
+  rebuildStateRefs();
+  refreshCurrentScreen();
+  if(btn) btn.style.opacity = '1';
+}
+
+/* ======================================================================
+   NAV
+====================================================================== */
+function buildBottomNav(){
+  const nav = document.getElementById('bottomNav');
+  if(state.role==='admin'){
+    nav.innerHTML = `
+      <button class="navbtn" data-s="admin-home" onclick="showScreen('admin-home')"><span class="ic">🏠</span>Inicio</button>
+      <button class="navbtn" data-s="admin-alumnos" onclick="showScreen('admin-alumnos')"><span class="ic">👥</span>Alumnos</button>
+      <button class="navbtn" data-s="admin-plan" onclick="showScreen('admin-plan')"><span class="ic">📅</span>Plan</button>
+      <button class="navbtn" data-s="admin-ejercicios" onclick="showScreen('admin-ejercicios')"><span class="ic">🏋️</span>Ejercicios</button>
+    `;
+  } else {
+    nav.innerHTML = `
+      <button class="navbtn" data-s="alumno-home" onclick="showScreen('alumno-home')"><span class="ic">🏠</span>Inicio</button>
+      <button class="navbtn" data-s="alumno-historial" onclick="showScreen('alumno-historial')"><span class="ic">📅</span>Historial</button>
+      <button class="navbtn" data-s="alumno-records" onclick="showScreen('alumno-records')"><span class="ic">🏆</span>Récords</button>
+    `;
+  }
+}
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.s===name));
+  if(name==='alumno-home') renderAlumnoHome();
+  if(name==='alumno-historial') renderHistorial();
+  if(name==='alumno-records') renderRecords(state.user.uid,'recordsList');
+  if(name==='admin-home') renderAdminHome();
+  if(name==='admin-alumnos') renderAdminAlumnos();
+  if(name==='admin-plan') renderAdminPlan();
+  if(name==='admin-ejercicios') renderAdminEjercicios();
+  if(name==='admin-detalle') renderDetalle();
+}
+function refreshCurrentScreen(){
+  const active = document.querySelector('.screen.active');
+  if(!active) return;
+  showScreen(active.id.replace('screen-',''));
+}
+
+/* ======================================================================
+   ALUMNO · INICIO
+====================================================================== */
+function renderAlumnoHome(){
+  const uidA = state.user.uid;
+  const fecha = todayStr();
+  const planHoy = (state.planificacion[uidA]||{})[fecha];
+  const regHoy = (state.registros[uidA]||{})[fecha];
+  const bloquesPlan = getBloques(planHoy);
+  const bloquesReg = getBloques(regHoy);
+  const card = document.getElementById('alumnoTodayCard');
+  let html = '';
+  if(bloquesPlan.length){
+    html += `<div class="row between" style="margin-bottom:8px;"><span class="badge ${planHoy.completado?'ok':'pend'}">${planHoy.completado?'Completado':'Asignado por Luciano'}</span><span class="small muted mono">${fecha}</span></div>`;
+    html += `<div class="small muted" style="text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Plan de hoy</div>`;
+    html += bloquesPlan.map(renderBloqueResumenHTML).join('');
+  }
+  if(bloquesReg.length){
+    html += `<div class="small muted" style="text-transform:uppercase;letter-spacing:.06em;margin:${bloquesPlan.length?'14px':'0'} 0 2px;">${bloquesPlan.length?'Lo que registraste':'Registrado hoy'}</div>`;
+    html += bloquesReg.map(renderBloqueResumenHTML).join('');
+  }
+  if(!bloquesPlan.length && !bloquesReg.length){
+    card.innerHTML = `<div class="empty"><div class="ic">📋</div>Todavía no cargaste tu entrenamiento de hoy.<br><br><button class="btn btn-accent" onclick="openLoadDay()">Cargar ahora</button></div>`;
+  } else {
+    if(!bloquesReg.length) html += `<button class="btn btn-accent btn-block" style="margin-top:12px;" onclick="openLoadDay()">Cargar lo que hiciste</button>`;
+    else html += `<button class="btn btn-ghost btn-block btn-sm" style="margin-top:10px;" onclick="openLoadDay()">Editar registro de hoy</button>`;
+    card.innerHTML = html;
+  }
+  const upcomingWrap = document.getElementById('alumnoUpcoming');
+  const futureDates = Object.keys(state.planificacion[uidA]||{}).filter(f=>f>fecha).sort().slice(0,5);
+  if(!futureDates.length){ upcomingWrap.innerHTML = `<div class="empty small"><div class="ic">🗓️</div>No tenés actividades planificadas próximamente.</div>`; }
+  else {
+    upcomingWrap.innerHTML = futureDates.map(f=>{
+      const p = state.planificacion[uidA][f];
+      const label = new Date(f+'T00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+      const nombres = getBloques(p).map(b=>`${b.nombre}: ${(b.ejercicios||[]).map(e=>nombreEjercicio(e.ejercicioId)).join(', ')}`).join(' · ');
+      return `<div class="card card-tight"><div class="row between"><b>${label}</b><span class="badge ${p.completado?'ok':'pend'}">${p.completado?'Hecho':'Pendiente'}</span></div>
+        <div class="small muted" style="margin-top:6px;">${nombres}</div></div>`;
+    }).join('');
+  }
+  renderRankingMes('alumnoRankingMes');
+  renderRecords(uidA,'alumnoRecordsMini',true);
+}
+function renderBloqueResumenHTML(bloque){
+  if(!bloque || !bloque.ejercicios || !bloque.ejercicios.length) return '';
+  return `<div style="margin:10px 0 4px;font-weight:800;font-size:11.5px;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;">${bloque.nombre||'Bloque'}</div>` +
+    bloque.ejercicios.map(renderEjercicioResumenLinea).join('');
+}
+function renderEjercicioResumenLinea(ej){
+  const pills = (ej.series||[]).map(s=>`<span class="set-pill"><b>${s.peso!==''&&s.peso!=null?s.peso+' KG':'—'}</b>${s.reps!==''&&s.reps!=null?s.reps+' REP':''}</span>`).join('');
+  return `<div class="list-item" style="border-color:var(--line);align-items:flex-start;">
+    <div class="avatar" style="background:var(--accent-dim);color:var(--accent);">🏋️</div>
+    <div style="flex:1;">
+      <div style="font-weight:700;font-size:14px;">${nombreEjercicio(ej.ejercicioId)}</div>
+      <div class="pill-row">${pills}</div>
+      ${ej.dolor? `<div class="small" style="color:var(--danger);margin-top:5px;">⚠ ${ej.nota||'Molestia reportada'}</div>`:''}
+    </div>
+  </div>`;
+}
+function nombreEjercicio(id){ return state.ejercicios[id]?.nombre || 'Ejercicio'; }
+
+/* ======================================================================
+   RANKING MENSUAL DE ASISTENCIAS
+====================================================================== */
+function calcularRankingMes(){
+  const pref = todayStr().slice(0,7); // yyyy-mm
+  return Object.keys(state.roster||{}).map(uidX=>{
+    const regs = state.registros[uidX]||{};
+    const dias = Object.keys(regs).filter(f=> f.startsWith(pref) && getBloques(regs[f]).length ).length;
+    return {uid:uidX, dias};
+  }).sort((a,b)=> b.dias - a.dias || (state.roster[a.uid].apellido||'').localeCompare(state.roster[b.uid].apellido||''));
+}
+function renderRankingMes(targetId){
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  const ranking = calcularRankingMes();
+  const mesLabel = new Date().toLocaleDateString('es-AR',{month:'long'});
+  if(!ranking.length || ranking.every(r=>r.dias===0)){
+    el.innerHTML = `<div class="empty small"><div class="ic">🏆</div>Todavía nadie registró entrenamientos en ${mesLabel}.</div>`;
+    return;
+  }
+  const max = Math.max(ranking[0].dias, 1);
+  const medallas = ['🥇','🥈','🥉'];
+  el.innerHTML = `<div class="small muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Asistencias de ${mesLabel}</div>` +
+    ranking.slice(0,10).map((r,i)=>{
+      const p = state.roster[r.uid];
+      const esYo = state.role==='alumno' && r.uid===state.user.uid;
+      return `<div class="rank-item ${esYo?'me':''}">
+        <div class="rank-pos">${medallas[i]||i+1}</div>
+        <div class="avatar">${initials(p.nombre,p.apellido)}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:13.5px;">${p.nombre} ${p.apellido}${esYo?' <span class="small muted">(vos)</span>':''}</div>
+          <div class="rank-bar"><div style="width:${r.dias/max*100}%"></div></div>
+        </div>
+        <div class="rank-days">${r.dias} día${r.dias===1?'':'s'}</div>
+      </div>`;
+    }).join('');
+}
+
+/* ======================================================================
+   RÉCORDS
+====================================================================== */
+function calcularRecords(uidX){
+  const regs = state.registros[uidX]||{};
+  const recs = {};
+  Object.entries(regs).forEach(([fecha,dia])=>{
+    getBloques(dia).forEach(bloque=>{
+      (bloque.ejercicios||[]).forEach(ej=>{
+        (ej.series||[]).forEach(s=>{
+          const peso = parseFloat(s.peso)||0;
+          if(!recs[ej.ejercicioId] || peso > recs[ej.ejercicioId].peso){
+            recs[ej.ejercicioId] = {peso, fecha};
+          }
+        });
+      });
+    });
+  });
+  return recs;
+}
+function renderRecords(uid, targetId, mini){
+  const recs = calcularRecords(uid);
+  const entries = Object.entries(recs).sort((a,b)=>b[1].peso-a[1].peso);
+  const el = document.getElementById(targetId);
+  if(!entries.length){ el.innerHTML = `<div class="empty small"><div class="ic">🏆</div>Todavía no hay récords cargados.</div>`; return; }
+  const show = mini ? entries.slice(0,3) : entries;
+  el.innerHTML = show.map(([id,r])=>`
+    <div class="rec-card">
+      <div><div style="font-weight:700;font-size:13.5px;">${nombreEjercicio(id)}</div><div class="small muted">${new Date(r.fecha+'T00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+      <div class="val">${r.peso} kg</div>
+    </div>`).join('');
+}
+
+/* ======================================================================
+   EDITOR DE ENTRENAMIENTO POR SECCIONES (reutilizado por: carga del
+   alumno, planificación del admin y carga de resultado del admin)
+====================================================================== */
+let editorState = {fecha:null, bloques:[]};
+let editorMode = null;      // 'log' (alumno carga su día) | 'plan' (admin asigna) | 'markplan' (admin carga resultado)
+let editorContext = {};     // datos extra: {uid} para 'plan' y 'markplan'
+
+function openLoadDay(fechaPre){
+  const fecha = fechaPre || todayStr();
+  const existentes = (state.registros[state.user.uid]||{})[fecha];
+  const planDelDia = (state.planificacion[state.user.uid]||{})[fecha];
+  let bloquesIniciales = [];
+  if(existentes && getBloques(existentes).length) bloquesIniciales = JSON.parse(JSON.stringify(getBloques(existentes)));
+  else if(planDelDia && getBloques(planDelDia).length) bloquesIniciales = JSON.parse(JSON.stringify(getBloques(planDelDia)));
+  editorState = {fecha, bloques: bloquesIniciales};
+  editorMode = 'log';
+  editorContext = {};
+  openBloquesEditorModal('Cargar entrenamiento','Guardar día');
+}
+
+function openAssignActivity(){
+  const fecha = document.getElementById('planDate').value || todayStr();
+  const uids = Object.keys(state.roster||{});
+  if(!uids.length){ alert('Agregá alumnos primero.'); return; }
+  editorState = {fecha, bloques: []};
+  editorMode = 'plan';
+  editorContext = {};
+  openBloquesEditorModal('Asignar actividad','Guardar planificación', {withAlumnoSelect:true, uids});
+}
+
+function openMarkComplete(uidT, fecha){
+  const plan = (state.planificacion[uidT]||{})[fecha];
+  const regExist = (state.registros[uidT]||{})[fecha];
+  const base = (regExist && getBloques(regExist).length) ? getBloques(regExist) : getBloques(plan);
+  editorState = {fecha, bloques: JSON.parse(JSON.stringify(base))};
+  editorMode = 'markplan';
+  editorContext = {uid:uidT};
+  const p = state.roster[uidT];
+  openBloquesEditorModal('Cargar resultado · '+(p?p.nombre+' '+p.apellido:'Alumno'), 'Guardar resultado');
+}
+
+async function markNotDone(uidT,fecha){
+  if(!(DB.planificacion[uidT] && DB.planificacion[uidT][fecha])) return;
+  DB.planificacion[uidT][fecha].completado = false;
+  await storageSet('planificacion', DB.planificacion);
+  rebuildStateRefs();
+  refreshCurrentScreen();
+}
+
+function openBloquesEditorModal(title, saveLabel, opts){
+  opts = opts||{};
+  if(!editorState.bloques.length) editorState.bloques.push({nombre:'', ejercicios:[]});
+  let alumnoSelectHtml = '';
+  if(opts.withAlumnoSelect){
+    alumnoSelectHtml = `<label class="field"><span>Alumno</span><select id="editorAlumno">${opts.uids.map(id=>`<option value="${id}">${state.roster[id].nombre} ${state.roster[id].apellido}</option>`).join('')}</select></label>`;
+  }
+  showModal(`
+    <h2 style="margin-top:0;">${title}</h2>
+    ${alumnoSelectHtml}
+    <label class="field"><span>Fecha</span><input type="date" id="editorFecha" value="${editorState.fecha}" onchange="editorState.fecha=this.value"></label>
+    <div id="editorBloquesList"></div>
+    <button class="btn btn-teal btn-block" onclick="addBloque()">+ Agregar sección (ej: Entrada en calor)</button>
+    <button class="btn btn-accent btn-block" style="margin-top:10px;" onclick="saveEditor()">${saveLabel}</button>
+    <datalist id="bloquePresets">${BLOQUE_PRESETS.map(p=>`<option value="${p}">`).join('')}</datalist>
+  `);
+  renderEditorBloques();
+}
+function renderEditorBloques(){
+  const wrap = document.getElementById('editorBloquesList');
+  if(!wrap) return;
+  const showPain = editorMode==='log' || editorMode==='markplan';
+  wrap.innerHTML = editorState.bloques.map((bloque,bi)=>{
+    const ejerciciosHtml = (bloque.ejercicios||[]).length
+      ? bloque.ejercicios.map((ej,ei)=>renderEjercicioEditor(bi,ei,ej,showPain)).join('')
+      : `<p class="muted small" style="margin:6px 0;">Sin ejercicios en esta sección todavía.</p>`;
+    return `<div class="card" style="border:1px solid var(--line);">
+      <div class="row between" style="margin-bottom:8px;">
+        <input type="text" list="bloquePresets" placeholder="Nombre de la sección (ej: Espalda y Bíceps)" value="${bloque.nombre||''}" style="flex:1;font-weight:700;" oninput="editorState.bloques[${bi}].nombre=this.value">
+        <button class="remove-x" style="margin-left:8px;" onclick="removeBloque(${bi})">✕</button>
+      </div>
+      ${ejerciciosHtml}
+      <button class="btn btn-ghost btn-sm" onclick="addEjercicioBloque(${bi})">+ Agregar ejercicio</button>
+    </div>`;
+  }).join('');
+}
+function renderEjercicioEditor(bi,ei,ej,showPain){
+  const opciones = exerciseOptionsGrouped(ej.ejercicioId);
+  const seriesHtml = (ej.series||[]).map((s,si)=>`
+    <div class="set-row">
+      <div class="idx">${si+1}</div>
+      <input type="number" placeholder="reps" value="${s.reps||''}" oninput="setSetVal(${bi},${ei},${si},'reps',this.value)">
+      <input type="number" placeholder="kg" step="0.5" value="${s.peso||''}" oninput="setSetVal(${bi},${ei},${si},'peso',this.value)">
+      <button class="remove-x" onclick="removeSet(${bi},${ei},${si})">✕</button>
+    </div>`).join('');
+  return `<div class="exercise-block">
+    <div class="row between" style="margin-bottom:8px;">
+      <select style="flex:1;" onchange="setEjercicio(${bi},${ei},this.value)">${opciones}</select>
+      <button class="remove-x" style="margin-left:8px;" onclick="removeEjercicioBloque(${bi},${ei})">✕</button>
+    </div>
+    <div class="chip-row small muted">Discos: ${DISCOS.map(d=>`<span class="chip" onclick="quickFillChip(${bi},${ei},${d})">${d}kg</span>`).join('')}</div>
+    <div class="chip-row small muted">Mancuernas: ${MANCUERNAS.map(d=>`<span class="chip teal" onclick="quickFillChip(${bi},${ei},${d})">${d}kg</span>`).join('')}</div>
+    <div class="small muted" style="margin:6px 0 4px;">Carga rápida: elegí cuántas series, repeticiones y kg, y tocá «Aplicar»</div>
+    <div class="row" style="gap:6px;margin-bottom:8px;">
+      <input type="number" min="1" value="${ej._qs!=null?ej._qs:3}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qs=this.value" title="series">
+      <span class="muted small">series ×</span>
+      <input type="number" placeholder="reps" value="${ej._qr||''}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qr=this.value">
+      <span class="muted small">×</span>
+      <input type="number" step="0.5" placeholder="kg" value="${ej._qp||''}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qp=this.value">
+      <button class="btn btn-teal btn-sm" onclick="applyQuickSeries(${bi},${ei})">Aplicar</button>
+    </div>
+    ${seriesHtml}
+    <button class="btn btn-ghost btn-sm" onclick="addSet(${bi},${ei})">+ Serie suelta</button>
+    ${showPain?`<div class="pain-toggle">
+      <div class="switch ${ej.dolor?'on':''}" onclick="togglePainEditor(${bi},${ei})"><div class="dot"></div></div>
+      <span class="small">Le costó / usó menos peso por molestia</span>
+    </div>
+    ${ej.dolor?`<textarea placeholder="¿Qué le dolió o por qué bajó el peso?" style="margin-top:8px;" oninput="setNota(${bi},${ei},this.value)">${ej.nota||''}</textarea>`:''}`:''}
+  </div>`;
+}
+function addBloque(){ editorState.bloques.push({nombre:'', ejercicios:[]}); renderEditorBloques(); }
+function removeBloque(bi){ editorState.bloques.splice(bi,1); renderEditorBloques(); }
+function addEjercicioBloque(bi){
+  const firstId = Object.keys(state.ejercicios)[0];
+  editorState.bloques[bi].ejercicios.push({ejercicioId:firstId, series:[{reps:'',peso:''}], dolor:false, nota:'', _qs:3, _qr:'', _qp:''});
+  renderEditorBloques();
+}
+function removeEjercicioBloque(bi,ei){ editorState.bloques[bi].ejercicios.splice(ei,1); renderEditorBloques(); }
+function setEjercicio(bi,ei,val){ editorState.bloques[bi].ejercicios[ei].ejercicioId = val; }
+function addSet(bi,ei){ editorState.bloques[bi].ejercicios[ei].series.push({reps:'',peso:''}); renderEditorBloques(); }
+function removeSet(bi,ei,si){ editorState.bloques[bi].ejercicios[ei].series.splice(si,1); renderEditorBloques(); }
+function setSetVal(bi,ei,si,field,val){ editorState.bloques[bi].ejercicios[ei].series[si][field] = val; }
+function togglePainEditor(bi,ei){ const ej = editorState.bloques[bi].ejercicios[ei]; ej.dolor = !ej.dolor; renderEditorBloques(); }
+function setNota(bi,ei,val){ editorState.bloques[bi].ejercicios[ei].nota = val; }
+function quickFillChip(bi,ei,val){ editorState.bloques[bi].ejercicios[ei]._qp = val; renderEditorBloques(); }
+function applyQuickSeries(bi,ei){
+  const ej = editorState.bloques[bi].ejercicios[ei];
+  const n = Math.max(1, parseInt(ej._qs)||1);
+  const reps = ej._qr||''; const peso = ej._qp||'';
+  ej.series = Array.from({length:n}, ()=>({reps,peso}));
+  renderEditorBloques();
+}
+
+async function saveEditor(){
+  const limpiaBloques = editorState.bloques.map(b=>({
+    nombre: (b.nombre||'').trim() || 'Entrenamiento',
+    ejercicios: (b.ejercicios||[])
+      .filter(e=>e.ejercicioId && (e.series||[]).some(s=>s.peso || s.reps))
+      .map(e=>({
+        ejercicioId: e.ejercicioId,
+        series: (e.series||[]).filter(s=>s.peso || s.reps).map(s=>({reps:s.reps, peso:s.peso})),
+        dolor: !!e.dolor,
+        nota: e.nota || ''
+      }))
+  })).filter(b=>b.ejercicios.length);
+
+  const fechaInput = document.getElementById('editorFecha');
+  const fecha = (fechaInput && fechaInput.value) || editorState.fecha;
+
+  if(editorMode==='log'){
+    const uidT = state.user.uid;
+    DB.registros[uidT] = DB.registros[uidT] || {};
+    DB.registros[uidT][fecha] = {bloques:limpiaBloques, actualizado:Date.now()};
+    await storageSet('registros', DB.registros);
+    rebuildStateRefs();
+    closeModal();
+    showScreen('alumno-home');
+  } else if(editorMode==='plan'){
+    const uidT = document.getElementById('editorAlumno').value;
+    DB.planificacion[uidT] = DB.planificacion[uidT] || {};
+    DB.planificacion[uidT][fecha] = {bloques:limpiaBloques, completado:false};
+    await storageSet('planificacion', DB.planificacion);
+    rebuildStateRefs();
+    closeModal();
+    renderPlanDay();
+  } else if(editorMode==='markplan'){
+    const uidT = editorContext.uid;
+    if(DB.planificacion[uidT] && DB.planificacion[uidT][fecha]) DB.planificacion[uidT][fecha].completado = true;
+    DB.registros[uidT] = DB.registros[uidT] || {};
+    DB.registros[uidT][fecha] = {bloques:limpiaBloques, actualizado:Date.now(), origenPlan:true};
+    await Promise.all([storageSet('planificacion',DB.planificacion), storageSet('registros',DB.registros)]);
+    rebuildStateRefs();
+    closeModal();
+    refreshCurrentScreen();
+  }
+}
+
+/* ======================================================================
+   HISTORIAL — alumno (calendario propio)
+====================================================================== */
+function setHistView(v,btn){
+  state.histView=v;
+  document.querySelectorAll('#screen-alumno-historial .seg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('histCalendarWrap').classList.toggle('hidden', v!=='calendario');
+  document.getElementById('histResumenWrap').classList.toggle('hidden', v!=='resumen');
+  renderHistorial();
+}
+function calShift(dir){ state.calMonth.setMonth(state.calMonth.getMonth()+dir); renderHistorial(); }
+function renderHistorial(){
+  if(state.histView==='calendario') renderCalendar(state.user.uid, state.calMonth, 'calLabel','calDowRow','calGrid','calDayDetail', d=>{ state.calSelectedDate=d; renderHistorial(); }, state.calSelectedDate, false);
+  else renderResumenAlumno();
+}
+function renderResumenAlumno(){
+  const uidA = state.user.uid;
+  const regs = state.registros[uidA]||{};
+  const fechas = Object.keys(regs).sort().reverse();
+  const wrap = document.getElementById('histResumenWrap');
+  if(!fechas.length){ wrap.innerHTML=`<div class="empty"><div class="ic">📊</div>Sin registros todavía.</div>`; return; }
+  const conteo = {};
+  const totalPorFecha = {};
+  fechas.forEach(f=>{
+    let n=0;
+    getBloques(regs[f]).forEach(b=> (b.ejercicios||[]).forEach(e=>{ const cat=state.ejercicios[e.ejercicioId]?.categoria||'Otro'; conteo[cat]=(conteo[cat]||0)+1; n++; }));
+    totalPorFecha[f]=n;
+  });
+  const max = Math.max(...Object.values(conteo),1);
+  wrap.innerHTML = `<div class="card"><h3 style="margin:0 0 10px;font-size:18px;">Distribución por grupo muscular</h3>` +
+    Object.entries(conteo).sort((a,b)=>b[1]-a[1]).map(([cat,n])=>`
+      <div style="margin-bottom:10px;"><div class="row between small"><span>${cat}</span><span class="mono muted">${n}</span></div>
+      <div class="progress-mini"><div style="width:${n/max*100}%"></div></div></div>`).join('') + `</div>` +
+    `<div class="section-title" style="font-size:18px;">Últimos días</div>` +
+    fechas.slice(0,10).map(f=>`<div class="card card-tight"><div class="row between"><b>${new Date(f+'T00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short'})}</b><span class="small muted mono">${totalPorFecha[f]} ejerc.</span></div></div>`).join('');
+}
+
+/* generic calendar renderer, reused for alumno + admin detalle */
+function renderCalendar(uid, monthDate, labelId, dowId, gridId, detailId, onSelect, selectedDate, isAdminView){
+  document.getElementById(labelId).textContent = monthLabel(monthDate);
+  const dow = document.getElementById(dowId);
+  dow.innerHTML = ['D','L','M','M','J','V','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const grid = document.getElementById(gridId);
+  const year = monthDate.getFullYear(), month = monthDate.getMonth();
+  const firstDow = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const regs = state.registros[uid]||{};
+  const plan = state.planificacion[uid]||{};
+  let html='';
+  for(let i=0;i<firstDow;i++) html+=`<div class="cal-cell empty-cell"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = fmtDate(new Date(year,month,d));
+    const hasLog = !!(regs[dateStr] && getBloques(regs[dateStr]).length);
+    const hasPlan = !!plan[dateStr];
+    const isToday = dateStr===todayStr();
+    const dots = (hasLog||hasPlan) ? `<span class="dots">${hasLog?'<i class="d-log"></i>':''}${hasPlan?'<i class="d-plan"></i>':''}</span>` : `<span class="dots"></span>`;
+    html += `<div class="cal-cell ${isToday?'today':''}" onclick="(${onSelect.toString()})('${dateStr}')"><span>${d}</span>${dots}</div>`;
+  }
+  grid.innerHTML = html;
+  const detail = document.getElementById(detailId);
+  const sel = selectedDate || todayStr();
+  const diaReg = regs[sel];
+  const diaPlan = plan[sel];
+  const bloquesReg = getBloques(diaReg);
+  const bloquesPlan = getBloques(diaPlan);
+  let out = `<b>${new Date(sel+'T00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</b>`;
+  let huboAlgo = false;
+  if(bloquesPlan.length){
+    huboAlgo = true;
+    out += `<div class="row between" style="margin:8px 0 2px;"><span class="small muted" style="text-transform:uppercase;letter-spacing:.06em;">Planificado por Luciano</span><span class="badge ${diaPlan.completado?'ok':'pend'}">${diaPlan.completado?'Completado':'Pendiente'}</span></div>`;
+    out += bloquesPlan.map(renderBloqueResumenHTML).join('');
+  }
+  if(bloquesReg.length){
+    huboAlgo = true;
+    out += `<div class="small muted" style="margin:${bloquesPlan.length?'14px':'8px'} 0 2px;text-transform:uppercase;letter-spacing:.06em;">Registrado</div>`;
+    out += bloquesReg.map(renderBloqueResumenHTML).join('');
+  }
+  if(!huboAlgo){
+    out += `<div class="empty small"><div class="ic">📭</div>Sin registro ni plan este día.</div>`;
+  }
+  if(uid===state.user.uid && state.role==='alumno'){
+    out += `<button class="btn btn-ghost btn-block btn-sm" style="margin-top:12px;" onclick="openLoadDay('${sel}')">Cargar / editar este día</button>`;
+  }
+  detail.innerHTML = out;
+}
+
+/* ======================================================================
+   ADMIN · INICIO (resumen del día de todos los alumnos)
+====================================================================== */
+function renderAdminHome(){
+  const wrap = document.getElementById('adminTodaySummary');
+  const uids = Object.keys(state.roster||{});
+  renderRankingMes('adminRankingMes');
+  if(!uids.length){ wrap.innerHTML=`<div class="empty"><div class="ic">👥</div>Todavía no agregaste alumnos.</div>`; return; }
+  const hoy = todayStr();
+  wrap.innerHTML = uids.map(uid=>{
+    const p = state.roster[uid];
+    const reg = (state.registros[uid]||{})[hoy];
+    const nEj = getBloques(reg).reduce((acc,b)=>acc+(b.ejercicios||[]).length,0);
+    const hecho = nEj > 0;
+    return `<div class="list-item" style="cursor:pointer;" onclick="openDetalle('${uid}')">
+      <div class="avatar">${initials(p.nombre,p.apellido)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;">${p.nombre} ${p.apellido}</div>
+        <div class="small muted">${hecho? (nEj+' ejercicio(s) hoy') : 'Sin cargar hoy'}</div>
+      </div>
+      <span class="badge ${hecho?'ok':'off'}">${hecho?'Hecho':'Pendiente'}</span>
+    </div>`;
+  }).join('');
+}
+function openDetalle(uid){
+  state.detUid = uid;
+  state.detCalMonth = new Date();
+  state.detSelectedDate = null;
+  document.getElementById('detalleNombre').textContent = state.roster[uid] ? (state.roster[uid].nombre+' '+state.roster[uid].apellido) : 'Alumno';
+  showScreen('admin-detalle');
+}
+
+/* ======================================================================
+   ADMIN · ALUMNOS
+====================================================================== */
+function renderAdminAlumnos(){
+  const wrap = document.getElementById('adminAlumnosList');
+  const uids = Object.keys(state.roster||{});
+  if(!uids.length){ wrap.innerHTML=`<div class="empty"><div class="ic">👥</div>Agregá tu primer alumno.</div>`; return; }
+  wrap.innerHTML = uids.map(uid=>{
+    const p = state.roster[uid];
+    return `<div class="list-item" style="cursor:pointer;" onclick="openDetalle('${uid}')">
+      <div class="avatar">${initials(p.nombre,p.apellido)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;">${p.nombre} ${p.apellido}</div>
+        <div class="small muted">${p.claimed? p.email : 'Aún no creó su cuenta'}</div>
+      </div>
+      ${p.claimed?'':'<span class="badge pend">Sin cuenta</span>'}
+      <button class="remove-x" onclick="event.stopPropagation();deleteAlumno('${uid}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function openAddAlumno(){
+  showModal(`
+    <h2 style="margin-top:0;">Agregar alumno</h2>
+    <p class="muted small">Cargá el nombre y apellido. El alumno después elige su nombre de la lista al crear su cuenta con su propio email y contraseña.</p>
+    <label class="field"><span>Nombre</span><input type="text" id="newAlumnoNombre"></label>
+    <label class="field"><span>Apellido</span><input type="text" id="newAlumnoApellido"></label>
+    <button class="btn btn-accent btn-block" onclick="saveAlumno()">Guardar</button>
+  `);
+}
+async function saveAlumno(){
+  const nombre = document.getElementById('newAlumnoNombre').value.trim();
+  const apellido = document.getElementById('newAlumnoApellido').value.trim();
+  if(!nombre||!apellido){ alert('Completá nombre y apellido.'); return; }
+  const id = uid('al');
+  DB.usuarios[id] = {nombre,apellido,rol:'alumno',claimed:false};
+  await storageSet('usuarios', DB.usuarios);
+  rebuildStateRefs();
+  closeModal();
+  refreshCurrentScreen();
+}
+async function deleteAlumno(uidBorrar){
+  if(!confirm('¿Eliminar a este alumno y todos sus registros?')) return;
+  delete DB.usuarios[uidBorrar];
+  delete DB.registros[uidBorrar];
+  delete DB.planificacion[uidBorrar];
+  await Promise.all([storageSet('usuarios',DB.usuarios), storageSet('registros',DB.registros), storageSet('planificacion',DB.planificacion)]);
+  rebuildStateRefs();
+  refreshCurrentScreen();
+}
+
+/* ======================================================================
+   ADMIN · DETALLE (calendario + récords de un alumno)
+====================================================================== */
+function setDetView(v,btn){
+  state.detView=v;
+  document.querySelectorAll('#screen-admin-detalle .seg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('detCalendarWrap').classList.toggle('hidden', v!=='calendario');
+  document.getElementById('detRecordsWrap').classList.toggle('hidden', v!=='records');
+  renderDetalle();
+}
+function detCalShift(dir){ state.detCalMonth.setMonth(state.detCalMonth.getMonth()+dir); renderDetalle(); }
+function renderDetalle(){
+  if(!state.detUid) return;
+  if(state.detView==='calendario'){
+    renderCalendar(state.detUid, state.detCalMonth, 'detCalLabel','detCalDowRow','detCalGrid','detDayDetail', d=>{ state.detSelectedDate=d; renderDetalle(); }, state.detSelectedDate, true);
+  } else {
+    renderRecords(state.detUid,'detRecordsWrap');
+  }
+}
+
+/* ======================================================================
+   ADMIN · PLANIFICACIÓN
+====================================================================== */
+function renderAdminPlan(){
+  const inp = document.getElementById('planDate');
+  if(!inp.value) inp.value = todayStr();
+  renderPlanDay();
+}
+function renderPlanDay(){
+  const fecha = document.getElementById('planDate').value || todayStr();
+  const wrap = document.getElementById('planDayList');
+  const uids = Object.keys(state.roster||{});
+  const items = uids.map(uidX=>{
+    const p = state.roster[uidX];
+    const plan = (state.planificacion[uidX]||{})[fecha];
+    if(!plan) return '';
+    const resumen = getBloques(plan).map(b=>`<b>${b.nombre}:</b> ${(b.ejercicios||[]).map(e=>nombreEjercicio(e.ejercicioId)).join(', ')}`).join(' · ');
+    return `<div class="card">
+      <div class="row between">
+        <div class="row"><div class="avatar">${initials(p.nombre,p.apellido)}</div><b>${p.nombre} ${p.apellido}</b></div>
+        <span class="badge ${plan.completado?'ok':'pend'}">${plan.completado?'Completado':'Pendiente'}</span>
+      </div>
+      <div class="small muted" style="margin:8px 0;">${resumen}</div>
+      <div class="row wrap">
+        <button class="btn btn-teal btn-sm" onclick="openMarkComplete('${uidX}','${fecha}')">Cargar resultado</button>
+        <button class="btn btn-ghost btn-sm" onclick="markNotDone('${uidX}','${fecha}')">Marcar no realizado</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteActivity('${uidX}','${fecha}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+  wrap.innerHTML = items || `<div class="empty small"><div class="ic">🗓️</div>Nadie tiene actividad asignada este día.</div>`;
+}
+async function deleteActivity(alumnoUid,fecha){
+  if(!confirm('¿Eliminar esta actividad planificada?')) return;
+  delete DB.planificacion[alumnoUid][fecha];
+  await storageSet('planificacion', DB.planificacion);
+  rebuildStateRefs();
+  refreshCurrentScreen();
+}
+
+/* ======================================================================
+   ADMIN · BASE DE EJERCICIOS
+====================================================================== */
+function renderAdminEjercicios(){
+  const wrap = document.getElementById('adminEjerciciosList');
+  const entries = Object.entries(state.ejercicios||{});
+  if(!entries.length){ wrap.innerHTML = `<div class="empty">Sin ejercicios cargados.</div>`; return; }
+  const porCategoria = {};
+  entries.forEach(([id,e])=>{ (porCategoria[e.categoria]=porCategoria[e.categoria]||[]).push([id,e]); });
+  wrap.innerHTML = CATEGORIAS.filter(c=>porCategoria[c]).map(cat=>`
+    <div class="card">
+      <b>${cat}</b>
+      ${porCategoria[cat].map(([id,e])=>`
+        <div class="list-item">
+          <div style="flex:1;">${e.nombre}</div>
+          <button class="remove-x" onclick="deleteEjercicio('${id}')">✕</button>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function openAddEjercicio(){
+  showModal(`
+    <h2 style="margin-top:0;">Nuevo ejercicio</h2>
+    <label class="field"><span>Nombre</span><input type="text" id="newEjNombre" placeholder="Ej: Remo en máquina T"></label>
+    <label class="field"><span>Categoría</span><select id="newEjCat">${CATEGORIAS.map(c=>`<option>${c}</option>`).join('')}</select></label>
+    <button class="btn btn-accent btn-block" onclick="saveEjercicio()">Guardar</button>
+  `);
+}
+async function saveEjercicio(){
+  const nombre = document.getElementById('newEjNombre').value.trim();
+  const categoria = document.getElementById('newEjCat').value;
+  if(!nombre){ alert('Escribí un nombre.'); return; }
+  const id = uid('ej');
+  DB.ejercicios[id] = {nombre,categoria};
+  await storageSet('ejercicios', DB.ejercicios);
+  rebuildStateRefs();
+  closeModal();
+  refreshCurrentScreen();
+}
+async function deleteEjercicio(id){
+  if(!confirm('¿Eliminar este ejercicio de la base?')) return;
+  delete DB.ejercicios[id];
+  await storageSet('ejercicios', DB.ejercicios);
+  rebuildStateRefs();
+  refreshCurrentScreen();
+}
+</script>
+</body>
+</html>
