@@ -987,13 +987,38 @@ function normalizarTxt(s){ return (s||'').toLowerCase().normalize('NFD').replace
 function renderEjSearch(q){
   const box = document.getElementById('ejSearchResults');
   if(!box) return;
-  const nq = normalizarTxt(q.trim());
+  const raw = q.trim();
+  const nq = normalizarTxt(raw);
   if(!nq){ box.innerHTML=''; return; }
   const matches = Object.entries(state.ejercicios||{})
     .filter(([id,e])=> normalizarTxt(e.nombre).includes(nq) || normalizarTxt(e.categoria).includes(nq))
     .slice(0,8);
-  if(!matches.length){ box.innerHTML = `<div class="search-item" style="cursor:default;color:var(--muted);">Sin resultados</div>`; return; }
-  box.innerHTML = matches.map(([id,e])=>`<div class="search-item" onclick="addEjercicioEditor('${id}')">${CAT_ICONS[e.categoria]||'🏋️'} ${e.nombre} <span class="small muted">· ${e.categoria}</span></div>`).join('');
+  const yaExiste = Object.values(state.ejercicios||{}).some(e=>normalizarTxt(e.nombre)===nq);
+  let html = matches.map(([id,e])=>`<div class="search-item" onclick="addEjercicioEditor('${id}')">${CAT_ICONS[e.categoria]||'🏋️'} ${e.nombre} <span class="small muted">· ${e.categoria}</span></div>`).join('');
+  if(!yaExiste && raw.length>=3) html += `<div class="search-item" style="color:var(--accent);" onclick="pedirCategoriaNuevoEj()">➕ Crear «${raw}» como ejercicio nuevo</div>`;
+  if(!html) html = `<div class="search-item" style="cursor:default;color:var(--muted);">Sin resultados</div>`;
+  box.innerHTML = html;
+}
+/* crear un ejercicio nuevo sin salir del editor: elegís categoría y queda
+   agregado a la rutina y guardado en la base de ejercicios */
+function pedirCategoriaNuevoEj(){
+  const inp = document.getElementById('ejSearch');
+  const nombre = (inp ? inp.value : '').trim();
+  if(!nombre) return;
+  const box = document.getElementById('ejSearchResults');
+  box.innerHTML = `<div class="search-item" style="cursor:default;color:var(--muted);">¿En qué categoría va «${nombre}»?</div>` +
+    CATEGORIAS.map((c,i)=>`<div class="search-item" onclick="crearEjercicioRapido(${i})">${CAT_ICONS[c]||'🏋️'} ${c}</div>`).join('');
+}
+async function crearEjercicioRapido(catIdx){
+  const inp = document.getElementById('ejSearch');
+  const nombre = (inp ? inp.value : '').trim();
+  if(!nombre) return;
+  const id = uid('ej');
+  DB.ejercicios[id] = {nombre, categoria: CATEGORIAS[catIdx]};
+  await storageSet('ejercicios', DB.ejercicios);
+  rebuildStateRefs();
+  addEjercicioEditor(id);
+  showToast('✓ «'+nombre+'» creado y agregado');
 }
 function addEjercicioEditor(id){
   editorState.ejercicios.push({ejercicioId:id, rondas:'', reps:'', peso:''});
