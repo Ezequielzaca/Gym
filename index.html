@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lucho Gym · Registro de Entrenamiento</title>
+<meta name="theme-color" content="#0d0f14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lucho Gym">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -174,6 +179,24 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 .switch.on .dot{left:18px;}
 .rec-card{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:10px;background:var(--panel-2);margin-bottom:8px;}
 .rec-card .val{font-family:'Roboto Mono';font-weight:700;color:var(--accent);font-size:16px;}
+
+/* ---------- editor simple: buscador + rondas/reps/peso ---------- */
+.search-wrap{position:relative;margin-top:4px;}
+.search-results{margin-top:6px;border-radius:12px;overflow:hidden;border:1px solid var(--line);}
+.search-results:empty{border:none;}
+.search-item{padding:12px 14px;background:var(--panel-2);border-bottom:1px solid var(--line);cursor:pointer;font-size:14px;font-weight:600;}
+.search-item:last-child{border-bottom:none;}
+.search-item:active,.search-item:hover{background:var(--accent-dim);}
+.triple{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.triple label{display:block;}
+.triple label span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;text-align:center;}
+.triple input{text-align:center;padding:11px 6px;font-family:'Roboto Mono';font-weight:700;}
+.chip{cursor:pointer;}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(16px);bottom:96px;z-index:120;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.record{background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;border-color:transparent;}
 </style>
 </head>
 <body>
@@ -680,6 +703,7 @@ function renderAlumnoHome(){
   hero.innerHTML = `
     <div class="saludo">Hola, ${state.profile.nombre} 👋</div>
     <div class="fecha">${hoyLabel}</div>
+    ${(r=>r>=2?`<div style="margin-top:8px;"><span class="badge pend">🔥 ${r} días seguidos</span></div>`:'')(rachaDias(uidA))}
     <div class="stat-grid">
       <div class="stat"><div class="val">${st.dias}</div><div class="lbl">Entrenos<br>del mes</div></div>
       <div class="stat"><div class="val">${fmtVol(st.volumen)}</div><div class="lbl">Volumen<br>(kg)</div></div>
@@ -843,45 +867,58 @@ function renderRecords(uid, targetId, mini){
 }
 
 /* ======================================================================
-   EDITOR DE ENTRENAMIENTO POR SECCIONES (reutilizado por: carga del
-   alumno, planificación del admin y carga de resultado del admin)
+   EDITOR SIMPLE DE ENTRENAMIENTO
+   Buscador de ejercicios + rondas / repeticiones / peso.
+   (reutilizado por: carga del alumno, planificación del admin y
+   carga de resultado del admin)
 ====================================================================== */
-let editorState = {fecha:null, bloques:[]};
+let editorState = {fecha:null, ejercicios:[]};
 let editorMode = null;      // 'log' (alumno carga su día) | 'plan' (admin asigna) | 'markplan' (admin carga resultado)
-let editorContext = {};     // datos extra: {uid} para 'plan' y 'markplan'
+let editorContext = {};     // datos extra: {uid} para 'markplan'
+
+/* aplana un día guardado (bloques/series) al formato simple del editor */
+function flattenDia(dia){
+  const out = [];
+  getBloques(dia).forEach(b=>(b.ejercicios||[]).forEach(ej=>{
+    const series = ej.series||[];
+    const first = series.find(x=>(x.reps!=='' && x.reps!=null) || (x.peso!=='' && x.peso!=null)) || series[0] || {};
+    out.push({ejercicioId:ej.ejercicioId, rondas:series.length||'', reps:(first.reps!=null?first.reps:''), peso:(first.peso!=null?first.peso:'')});
+  }));
+  return out;
+}
 
 function openLoadDay(fechaPre){
   const fecha = fechaPre || todayStr();
   const existentes = (state.registros[state.user.uid]||{})[fecha];
   const planDelDia = (state.planificacion[state.user.uid]||{})[fecha];
-  let bloquesIniciales = [];
-  if(existentes && getBloques(existentes).length) bloquesIniciales = JSON.parse(JSON.stringify(getBloques(existentes)));
-  else if(planDelDia && getBloques(planDelDia).length) bloquesIniciales = JSON.parse(JSON.stringify(getBloques(planDelDia)));
-  editorState = {fecha, bloques: bloquesIniciales};
+  let inicial = [];
+  if(existentes && getBloques(existentes).length) inicial = flattenDia(existentes);
+  else if(planDelDia && getBloques(planDelDia).length) inicial = flattenDia(planDelDia);
+  editorState = {fecha, ejercicios: inicial};
   editorMode = 'log';
   editorContext = {};
-  openBloquesEditorModal('Cargar entrenamiento','Guardar día');
+  openEditorModal('Cargar entrenamiento','Guardar día');
 }
 
 function openAssignActivity(){
   const fecha = document.getElementById('planDate').value || todayStr();
   const uids = Object.keys(state.roster||{});
-  if(!uids.length){ alert('Agregá alumnos primero.'); return; }
-  editorState = {fecha, bloques: []};
+  if(!uids.length){ showToast('Agregá alumnos primero'); return; }
+  editorState = {fecha, ejercicios: []};
   editorMode = 'plan';
   editorContext = {};
-  openBloquesEditorModal('Asignar actividad','Guardar planificación', {withAlumnoSelect:true, uids});
+  openEditorModal('Asignar actividad','Guardar planificación', {withAlumnoSelect:true, uids});
 }
 
 function openMarkComplete(uidT, fecha){
   const plan = (state.planificacion[uidT]||{})[fecha];
   const regExist = (state.registros[uidT]||{})[fecha];
-  const base = (regExist && getBloques(regExist).length) ? getBloques(regExist) : getBloques(plan);
-  editorState = {fecha, bloques: JSON.parse(JSON.stringify(base))};
+  const base = (regExist && getBloques(regExist).length) ? regExist : plan;
+  editorState = {fecha, ejercicios: flattenDia(base)};
   editorMode = 'markplan';
   editorContext = {uid:uidT};
   const p = state.roster[uidT];
-  openBloquesEditorModal('Cargar resultado · '+(p?p.nombre+' '+p.apellido:'Alumno'), 'Guardar resultado');
+  openEditorModal('Cargar resultado · '+(p?p.nombre+' '+p.apellido:'Alumno'), 'Guardar resultado');
 }
 
 async function markNotDone(uidT,fecha){
@@ -892,132 +929,233 @@ async function markNotDone(uidT,fecha){
   refreshCurrentScreen();
 }
 
-function openBloquesEditorModal(title, saveLabel, opts){
+function openEditorModal(title, saveLabel, opts){
   opts = opts||{};
-  if(!editorState.bloques.length) editorState.bloques.push({nombre:'', ejercicios:[]});
   let alumnoSelectHtml = '';
   if(opts.withAlumnoSelect){
-    alumnoSelectHtml = `<label class="field"><span>Alumno</span><select id="editorAlumno">${opts.uids.map(id=>`<option value="${id}">${state.roster[id].nombre} ${state.roster[id].apellido}</option>`).join('')}</select></label>`;
+    alumnoSelectHtml = `<label class="field"><span>Alumno</span><select id="editorAlumno" onchange="renderEditorRecents();renderEditorEjercicios();">${opts.uids.map(id=>`<option value="${id}">${state.roster[id].nombre} ${state.roster[id].apellido}</option>`).join('')}</select></label>`;
   }
+  const regActual = editorMode==='log' ? (state.registros[state.user.uid]||{})[editorState.fecha] : null;
+  const puedeEliminar = !!(regActual && getBloques(regActual).length);
   showModal(`
     <h2 style="margin-top:0;">${title}</h2>
     ${alumnoSelectHtml}
-    <label class="field"><span>Fecha</span><input type="date" id="editorFecha" value="${editorState.fecha}" onchange="editorState.fecha=this.value"></label>
-    <div id="editorBloquesList"></div>
-    <button class="btn btn-teal btn-block" onclick="addBloque()">+ Agregar sección (ej: Entrada en calor)</button>
-    <button class="btn btn-accent btn-block" style="margin-top:10px;" onclick="saveEditor()">${saveLabel}</button>
-    <datalist id="bloquePresets">${BLOQUE_PRESETS.map(p=>`<option value="${p}">`).join('')}</datalist>
+    <label class="field"><span>Fecha</span><input type="date" id="editorFecha" value="${editorState.fecha}" onchange="editorState.fecha=this.value;renderEditorEjercicios();"></label>
+    ${editorMode==='log' && !editorState.ejercicios.length?`<button class="btn btn-ghost btn-block" id="btnCopiarUltimo" style="margin-bottom:10px;" onclick="copiarUltimoDia()">⧉ Repetir mi último entrenamiento</button>`:''}
+    <div id="editorEjList"></div>
+    <div id="editorRecents"></div>
+    <div class="search-wrap">
+      <input type="text" id="ejSearch" placeholder="🔍 Buscar ejercicio para agregar…" autocomplete="off" oninput="renderEjSearch(this.value)">
+      <div id="ejSearchResults" class="search-results"></div>
+    </div>
+    <button class="btn btn-accent btn-block" style="margin-top:14px;" onclick="saveEditor()">${saveLabel}</button>
+    ${puedeEliminar?`<button class="btn btn-danger btn-block" style="margin-top:10px;" onclick="deleteDiaActual()">🗑 Eliminar este día</button>`:''}
   `);
-  renderEditorBloques();
+  renderEditorEjercicios();
+  renderEditorRecents();
 }
-function renderEditorBloques(){
-  const wrap = document.getElementById('editorBloquesList');
+
+function renderEditorEjercicios(){
+  const wrap = document.getElementById('editorEjList');
   if(!wrap) return;
-  const showPain = editorMode==='log' || editorMode==='markplan';
-  wrap.innerHTML = editorState.bloques.map((bloque,bi)=>{
-    const ejerciciosHtml = (bloque.ejercicios||[]).length
-      ? bloque.ejercicios.map((ej,ei)=>renderEjercicioEditor(bi,ei,ej,showPain)).join('')
-      : `<p class="muted small" style="margin:6px 0;">Sin ejercicios en esta sección todavía.</p>`;
-    return `<div class="card" style="border:1px solid var(--line);">
-      <div class="row between" style="margin-bottom:8px;">
-        <input type="text" list="bloquePresets" placeholder="Nombre de la sección (ej: Espalda y Bíceps)" value="${bloque.nombre||''}" style="flex:1;font-weight:700;" oninput="editorState.bloques[${bi}].nombre=this.value">
-        <button class="remove-x" style="margin-left:8px;" onclick="removeBloque(${bi})">✕</button>
+  if(!editorState.ejercicios.length){
+    wrap.innerHTML = `<div class="empty small" style="padding:16px 8px;"><div class="ic">🏋️</div>Buscá un ejercicio abajo para agregarlo.</div>`;
+    return;
+  }
+  const uidT = editorTargetUid();
+  const fechaRef = editorState.fecha || todayStr();
+  wrap.innerHTML = editorState.ejercicios.map((ej,i)=>{
+    const uv = uidT ? ultimaVezEjercicio(uidT, ej.ejercicioId, fechaRef) : null;
+    const uvHtml = uv ? `<div class="small" style="margin-top:7px;color:var(--teal);">↩ Última vez: ${uv.rondas}×${uv.reps!==''&&uv.reps!=null?uv.reps:'—'}${uv.peso!==''&&uv.peso!=null?` · ${uv.peso} kg`:''} <span class="muted">(${new Date(uv.fecha+'T00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})})</span></div>` : '';
+    return `
+    <div class="exercise-block">
+      <div class="row between" style="margin-bottom:10px;">
+        <div style="font-weight:700;font-size:14px;">${iconoEjercicio(ej.ejercicioId)} ${nombreEjercicio(ej.ejercicioId)}</div>
+        <button class="remove-x" onclick="removeEjercicioEditor(${i})">✕</button>
       </div>
-      ${ejerciciosHtml}
-      <button class="btn btn-ghost btn-sm" onclick="addEjercicioBloque(${bi})">+ Agregar ejercicio</button>
+      <div class="triple">
+        <label><span>Rondas</span><input type="number" min="1" inputmode="numeric" placeholder="3" value="${ej.rondas!=null?ej.rondas:''}" oninput="setEjVal(${i},'rondas',this.value)"></label>
+        <label><span>Reps</span><input type="number" min="0" inputmode="numeric" placeholder="10" value="${ej.reps!=null?ej.reps:''}" oninput="setEjVal(${i},'reps',this.value)"></label>
+        <label><span>Peso (kg)</span><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="0" value="${ej.peso!=null?ej.peso:''}" oninput="setEjVal(${i},'peso',this.value)"></label>
+      </div>
+      ${uvHtml}
     </div>`;
   }).join('');
 }
-function renderEjercicioEditor(bi,ei,ej,showPain){
-  const opciones = exerciseOptionsGrouped(ej.ejercicioId);
-  const seriesHtml = (ej.series||[]).map((s,si)=>`
-    <div class="set-row">
-      <div class="idx">${si+1}</div>
-      <input type="number" placeholder="reps" value="${s.reps||''}" oninput="setSetVal(${bi},${ei},${si},'reps',this.value)">
-      <input type="number" placeholder="kg" step="0.5" value="${s.peso||''}" oninput="setSetVal(${bi},${ei},${si},'peso',this.value)">
-      <button class="remove-x" onclick="removeSet(${bi},${ei},${si})">✕</button>
-    </div>`).join('');
-  return `<div class="exercise-block">
-    <div class="row between" style="margin-bottom:8px;">
-      <select style="flex:1;" onchange="setEjercicio(${bi},${ei},this.value)">${opciones}</select>
-      <button class="remove-x" style="margin-left:8px;" onclick="removeEjercicioBloque(${bi},${ei})">✕</button>
-    </div>
-    <div class="chip-row small muted">Discos: ${DISCOS.map(d=>`<span class="chip" onclick="quickFillChip(${bi},${ei},${d})">${d}kg</span>`).join('')}</div>
-    <div class="chip-row small muted">Mancuernas: ${MANCUERNAS.map(d=>`<span class="chip teal" onclick="quickFillChip(${bi},${ei},${d})">${d}kg</span>`).join('')}</div>
-    <div class="small muted" style="margin:6px 0 4px;">Carga rápida: elegí cuántas series, repeticiones y kg, y tocá «Aplicar»</div>
-    <div class="row" style="gap:6px;margin-bottom:8px;">
-      <input type="number" min="1" value="${ej._qs!=null?ej._qs:3}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qs=this.value" title="series">
-      <span class="muted small">series ×</span>
-      <input type="number" placeholder="reps" value="${ej._qr||''}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qr=this.value">
-      <span class="muted small">×</span>
-      <input type="number" step="0.5" placeholder="kg" value="${ej._qp||''}" style="width:64px;" oninput="editorState.bloques[${bi}].ejercicios[${ei}]._qp=this.value">
-      <button class="btn btn-teal btn-sm" onclick="applyQuickSeries(${bi},${ei})">Aplicar</button>
-    </div>
-    ${seriesHtml}
-    <div class="row" style="gap:6px;">
-      <button class="btn btn-ghost btn-sm" onclick="addSet(${bi},${ei})">+ Serie</button>
-      <button class="btn btn-ghost btn-sm" onclick="dupSet(${bi},${ei})">⧉ Repetir última</button>
-    </div>
-    ${showPain?`<div class="pain-toggle">
-      <div class="switch ${ej.dolor?'on':''}" onclick="togglePainEditor(${bi},${ei})"><div class="dot"></div></div>
-      <span class="small">Le costó / usó menos peso por molestia</span>
-    </div>
-    ${ej.dolor?`<textarea placeholder="¿Qué le dolió o por qué bajó el peso?" style="margin-top:8px;" oninput="setNota(${bi},${ei},this.value)">${ej.nota||''}</textarea>`:''}`:''}
-  </div>`;
+
+function normalizarTxt(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function renderEjSearch(q){
+  const box = document.getElementById('ejSearchResults');
+  if(!box) return;
+  const nq = normalizarTxt(q.trim());
+  if(!nq){ box.innerHTML=''; return; }
+  const matches = Object.entries(state.ejercicios||{})
+    .filter(([id,e])=> normalizarTxt(e.nombre).includes(nq) || normalizarTxt(e.categoria).includes(nq))
+    .slice(0,8);
+  if(!matches.length){ box.innerHTML = `<div class="search-item" style="cursor:default;color:var(--muted);">Sin resultados</div>`; return; }
+  box.innerHTML = matches.map(([id,e])=>`<div class="search-item" onclick="addEjercicioEditor('${id}')">${CAT_ICONS[e.categoria]||'🏋️'} ${e.nombre} <span class="small muted">· ${e.categoria}</span></div>`).join('');
 }
-function addBloque(){ editorState.bloques.push({nombre:'', ejercicios:[]}); renderEditorBloques(); }
-function removeBloque(bi){ editorState.bloques.splice(bi,1); renderEditorBloques(); }
-function addEjercicioBloque(bi){
-  const firstId = Object.keys(state.ejercicios)[0];
-  editorState.bloques[bi].ejercicios.push({ejercicioId:firstId, series:[{reps:'',peso:''}], dolor:false, nota:'', _qs:3, _qr:'', _qp:''});
-  renderEditorBloques();
+function addEjercicioEditor(id){
+  editorState.ejercicios.push({ejercicioId:id, rondas:'', reps:'', peso:''});
+  const inp = document.getElementById('ejSearch');
+  if(inp) inp.value='';
+  const box = document.getElementById('ejSearchResults');
+  if(box) box.innerHTML='';
+  renderEditorEjercicios();
+  renderEditorRecents();
 }
-function removeEjercicioBloque(bi,ei){ editorState.bloques[bi].ejercicios.splice(ei,1); renderEditorBloques(); }
-function setEjercicio(bi,ei,val){ editorState.bloques[bi].ejercicios[ei].ejercicioId = val; }
-function addSet(bi,ei){ editorState.bloques[bi].ejercicios[ei].series.push({reps:'',peso:''}); renderEditorBloques(); }
-function dupSet(bi,ei){
-  const series = editorState.bloques[bi].ejercicios[ei].series;
-  const last = series[series.length-1];
-  series.push(last ? {reps:last.reps, peso:last.peso} : {reps:'',peso:''});
-  renderEditorBloques();
+function removeEjercicioEditor(i){ editorState.ejercicios.splice(i,1); renderEditorEjercicios(); renderEditorRecents(); }
+function setEjVal(i,f,v){ editorState.ejercicios[i][f]=v; }
+
+/* eliminar el día abierto en el editor (por si se cargó mal) */
+async function deleteDiaActual(){
+  if(!confirm('¿Eliminar todo lo cargado en este día?')) return;
+  const uidT = state.user.uid;
+  if(DB.registros[uidT]) delete DB.registros[uidT][editorState.fecha];
+  await storageSet('registros', DB.registros);
+  rebuildStateRefs();
+  closeModal();
+  refreshCurrentScreen();
+  showToast('Día eliminado');
 }
-function removeSet(bi,ei,si){ editorState.bloques[bi].ejercicios[ei].series.splice(si,1); renderEditorBloques(); }
-function setSetVal(bi,ei,si,field,val){ editorState.bloques[bi].ejercicios[ei].series[si][field] = val; }
-function togglePainEditor(bi,ei){ const ej = editorState.bloques[bi].ejercicios[ei]; ej.dolor = !ej.dolor; renderEditorBloques(); }
-function setNota(bi,ei,val){ editorState.bloques[bi].ejercicios[ei].nota = val; }
-function quickFillChip(bi,ei,val){ editorState.bloques[bi].ejercicios[ei]._qp = val; renderEditorBloques(); }
-function applyQuickSeries(bi,ei){
-  const ej = editorState.bloques[bi].ejercicios[ei];
-  const n = Math.max(1, parseInt(ej._qs)||1);
-  const reps = ej._qr||''; const peso = ej._qp||'';
-  ej.series = Array.from({length:n}, ()=>({reps,peso}));
-  renderEditorBloques();
+
+/* eliminar el registro de un día desde el calendario */
+async function deleteRegistroDia(uidT, fecha){
+  if(!confirm('¿Eliminar el registro de este día?')) return;
+  if(DB.registros[uidT]) delete DB.registros[uidT][fecha];
+  await storageSet('registros', DB.registros);
+  rebuildStateRefs();
+  refreshCurrentScreen();
+  showToast('Día eliminado');
+}
+
+/* ---------- toast de confirmación ---------- */
+let toastTimer = null;
+function showToast(msg, tipo, dur){
+  let t = document.getElementById('toastBox');
+  if(!t){ t = document.createElement('div'); t.id = 'toastBox'; document.body.appendChild(t); }
+  t.className = 'toast' + (tipo==='record' ? ' record' : '');
+  t.innerHTML = msg;
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), dur||2200);
+}
+
+/* ---------- ayudas del editor ---------- */
+function editorTargetUid(){
+  if(editorMode==='markplan') return editorContext.uid;
+  if(editorMode==='plan'){ const sel = document.getElementById('editorAlumno'); return sel ? sel.value : null; }
+  return state.user ? state.user.uid : null;
+}
+function ejerciciosFrecuentes(uidT, limit){
+  const regs = state.registros[uidT]||{};
+  const score = {};
+  const fechas = Object.keys(regs).sort();
+  fechas.forEach((f,idx)=>{
+    getBloques(regs[f]).forEach(b=>(b.ejercicios||[]).forEach(e=>{
+      score[e.ejercicioId] = (score[e.ejercicioId]||0) + 1 + (idx>=fechas.length-5 ? 2 : 0);
+    }));
+  });
+  return Object.entries(score).filter(([id])=>state.ejercicios[id]).sort((a,b)=>b[1]-a[1]).slice(0,limit||6).map(([id])=>id);
+}
+function renderEditorRecents(){
+  const box = document.getElementById('editorRecents');
+  if(!box) return;
+  const uidT = editorTargetUid();
+  if(!uidT){ box.innerHTML=''; return; }
+  const ya = new Set(editorState.ejercicios.map(e=>e.ejercicioId));
+  const ids = ejerciciosFrecuentes(uidT, 10).filter(id=>!ya.has(id)).slice(0,6);
+  if(!ids.length){ box.innerHTML=''; return; }
+  box.innerHTML = `<div class="small muted" style="margin:4px 0 6px;">Frecuentes (tocá para agregar):</div><div class="chip-row">` +
+    ids.map(id=>`<span class="chip" onclick="addEjercicioEditor('${id}')">${iconoEjercicio(id)} ${nombreEjercicio(id)}</span>`).join('') + `</div>`;
+}
+function ultimaVezEjercicio(uidT, ejId, antesDe){
+  const regs = state.registros[uidT]||{};
+  const fechas = Object.keys(regs).filter(f=>f<antesDe).sort().reverse();
+  for(const f of fechas){
+    for(const b of getBloques(regs[f])){
+      const e = (b.ejercicios||[]).find(x=>x.ejercicioId===ejId);
+      if(e){
+        const sr = (e.series||[])[0]||{};
+        return {fecha:f, rondas:(e.series||[]).length, reps:sr.reps, peso:sr.peso};
+      }
+    }
+  }
+  return null;
+}
+function copiarUltimoDia(){
+  const uidT = state.user.uid;
+  const regs = state.registros[uidT]||{};
+  const ref = editorState.fecha || todayStr();
+  const fechas = Object.keys(regs).filter(f=>f<ref && getBloques(regs[f]).length).sort().reverse();
+  if(!fechas.length){ showToast('No tenés entrenamientos anteriores para copiar'); return; }
+  editorState.ejercicios = flattenDia(regs[fechas[0]]);
+  const btn = document.getElementById('btnCopiarUltimo'); if(btn) btn.remove();
+  renderEditorEjercicios();
+  renderEditorRecents();
+  showToast('✓ Copiado del '+new Date(fechas[0]+'T00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}));
+}
+function maxPesoPrevio(uidT, ejId, excluirFecha){
+  let max = 0;
+  Object.entries(state.registros[uidT]||{}).forEach(([f,dia])=>{
+    if(f===excluirFecha) return;
+    getBloques(dia).forEach(b=>(b.ejercicios||[]).forEach(e=>{
+      if(e.ejercicioId!==ejId) return;
+      (e.series||[]).forEach(sr=>{ const pz = parseFloat(sr.peso)||0; if(pz>max) max = pz; });
+    }));
+  });
+  return max;
+}
+
+/* ---------- racha de días seguidos ---------- */
+function rachaDias(uidT){
+  const regs = state.registros[uidT]||{};
+  const tiene = f => !!(regs[f] && getBloques(regs[f]).length);
+  const d = new Date();
+  let racha = 0;
+  if(!tiene(fmtDate(d))) d.setDate(d.getDate()-1);
+  while(tiene(fmtDate(d))){ racha++; d.setDate(d.getDate()-1); }
+  return racha;
 }
 
 async function saveEditor(){
-  const limpiaBloques = editorState.bloques.map(b=>({
-    nombre: (b.nombre||'').trim() || 'Entrenamiento',
-    ejercicios: (b.ejercicios||[])
-      .filter(e=>e.ejercicioId && (e.series||[]).some(s=>s.peso || s.reps))
-      .map(e=>({
+  const ejerciciosLimpios = editorState.ejercicios
+    .filter(e=>e.ejercicioId)
+    .map(e=>{
+      const n = Math.max(1, parseInt(e.rondas)||1);
+      return {
         ejercicioId: e.ejercicioId,
-        series: (e.series||[]).filter(s=>s.peso || s.reps).map(s=>({reps:s.reps, peso:s.peso})),
-        dolor: !!e.dolor,
-        nota: e.nota || ''
-      }))
-  })).filter(b=>b.ejercicios.length);
+        series: Array.from({length:n}, ()=>({reps:e.reps||'', peso:e.peso||''})),
+        dolor: false,
+        nota: ''
+      };
+    });
+  const limpiaBloques = ejerciciosLimpios.length ? [{nombre:'Entrenamiento', ejercicios:ejerciciosLimpios}] : [];
 
   const fechaInput = document.getElementById('editorFecha');
   const fecha = (fechaInput && fechaInput.value) || editorState.fecha;
 
-  if(editorMode==='log'){
-    const uidT = state.user.uid;
+  if(editorMode==='log' || editorMode==='markplan'){
+    const uidT = editorMode==='log' ? state.user.uid : editorContext.uid;
+    // detectar nuevos récords antes de pisar los datos
+    const records = [];
+    ejerciciosLimpios.forEach(e=>{
+      const peso = parseFloat(e.series[0] && e.series[0].peso)||0;
+      const prev = maxPesoPrevio(uidT, e.ejercicioId, fecha);
+      if(prev>0 && peso>prev) records.push(`${nombreEjercicio(e.ejercicioId)}: ${peso} kg`);
+    });
+    if(editorMode==='markplan' && DB.planificacion[uidT] && DB.planificacion[uidT][fecha]) DB.planificacion[uidT][fecha].completado = true;
     DB.registros[uidT] = DB.registros[uidT] || {};
-    DB.registros[uidT][fecha] = {bloques:limpiaBloques, actualizado:Date.now()};
-    await storageSet('registros', DB.registros);
+    DB.registros[uidT][fecha] = editorMode==='log'
+      ? {bloques:limpiaBloques, actualizado:Date.now()}
+      : {bloques:limpiaBloques, actualizado:Date.now(), origenPlan:true};
+    if(editorMode==='markplan') await Promise.all([storageSet('planificacion',DB.planificacion), storageSet('registros',DB.registros)]);
+    else await storageSet('registros', DB.registros);
     rebuildStateRefs();
     closeModal();
-    showScreen('alumno-home');
+    if(editorMode==='log') showScreen('alumno-home'); else refreshCurrentScreen();
+    if(records.length) showToast('🎉 ¡Nuevo récord! '+records.join(' · '), 'record', 4500);
+    else showToast(editorMode==='log' ? '✓ Día guardado' : '✓ Resultado guardado');
   } else if(editorMode==='plan'){
     const uidT = document.getElementById('editorAlumno').value;
     DB.planificacion[uidT] = DB.planificacion[uidT] || {};
@@ -1026,15 +1164,7 @@ async function saveEditor(){
     rebuildStateRefs();
     closeModal();
     renderPlanDay();
-  } else if(editorMode==='markplan'){
-    const uidT = editorContext.uid;
-    if(DB.planificacion[uidT] && DB.planificacion[uidT][fecha]) DB.planificacion[uidT][fecha].completado = true;
-    DB.registros[uidT] = DB.registros[uidT] || {};
-    DB.registros[uidT][fecha] = {bloques:limpiaBloques, actualizado:Date.now(), origenPlan:true};
-    await Promise.all([storageSet('planificacion',DB.planificacion), storageSet('registros',DB.registros)]);
-    rebuildStateRefs();
-    closeModal();
-    refreshCurrentScreen();
+    showToast('✓ Planificación guardada');
   }
 }
 
@@ -1122,6 +1252,10 @@ function renderCalendar(uid, monthDate, labelId, dowId, gridId, detailId, onSele
   }
   if(uid===state.user.uid && state.role==='alumno'){
     out += `<button class="btn btn-ghost btn-block btn-sm" style="margin-top:12px;" onclick="openLoadDay('${sel}')">Cargar / editar este día</button>`;
+    if(bloquesReg.length) out += `<button class="btn btn-danger btn-block btn-sm" style="margin-top:8px;" onclick="deleteRegistroDia('${uid}','${sel}')">🗑 Eliminar registro del día</button>`;
+  }
+  if(isAdminView && bloquesReg.length){
+    out += `<button class="btn btn-danger btn-block btn-sm" style="margin-top:12px;" onclick="deleteRegistroDia('${uid}','${sel}')">🗑 Eliminar registro del día</button>`;
   }
   detail.innerHTML = out;
 }
@@ -1207,7 +1341,7 @@ function openAddAlumno(){
 async function saveAlumno(){
   const nombre = document.getElementById('newAlumnoNombre').value.trim();
   const apellido = document.getElementById('newAlumnoApellido').value.trim();
-  if(!nombre||!apellido){ alert('Completá nombre y apellido.'); return; }
+  if(!nombre||!apellido){ showToast('Completá nombre y apellido'); return; }
   const id = uid('al');
   DB.usuarios[id] = {nombre,apellido,rol:'alumno',claimed:false};
   await storageSet('usuarios', DB.usuarios);
@@ -1323,7 +1457,7 @@ function openAddEjercicio(){
 async function saveEjercicio(){
   const nombre = document.getElementById('newEjNombre').value.trim();
   const categoria = document.getElementById('newEjCat').value;
-  if(!nombre){ alert('Escribí un nombre.'); return; }
+  if(!nombre){ showToast('Escribí un nombre'); return; }
   const id = uid('ej');
   DB.ejercicios[id] = {nombre,categoria};
   await storageSet('ejercicios', DB.ejercicios);
@@ -1338,6 +1472,41 @@ async function deleteEjercicio(id){
   rebuildStateRefs();
   refreshCurrentScreen();
 }
+
+/* ======================================================================
+   PWA: permite instalar la app en la pantalla de inicio del celular
+====================================================================== */
+(function setupPWA(){
+  try{
+    function iconPNG(size){
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0,0,size,size);
+      g.addColorStop(0,'#ffc300'); g.addColorStop(1,'#cc9100');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,size,size);
+      ctx.fillStyle = '#231a00';
+      ctx.font = '700 '+Math.round(size*0.4)+'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('LG', size/2, size/2 + size*0.03);
+      return c.toDataURL('image/png');
+    }
+    const i192 = iconPNG(192), i512 = iconPNG(512);
+    const manifest = {
+      name:'Lucho Gym', short_name:'Lucho Gym',
+      start_url: location.href.split('#')[0],
+      display:'standalone', background_color:'#0d0f14', theme_color:'#0d0f14',
+      icons:[{src:i192,sizes:'192x192',type:'image/png'},{src:i512,sizes:'512x512',type:'image/png'}]
+    };
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
+    document.head.appendChild(link);
+    const apple = document.createElement('link');
+    apple.rel = 'apple-touch-icon'; apple.href = i192;
+    document.head.appendChild(apple);
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
