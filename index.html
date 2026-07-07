@@ -488,6 +488,41 @@ function loadRosterForRegister(){
   sel.innerHTML = '<option value="">Elegí tu nombre…</option>' + opciones.map(([id,p])=>`<option value="${id}">${p.apellido}, ${p.nombre}</option>`).join('');
 }
 
+/* ======================================================================
+   SESIÓN PERSISTENTE
+   La sesión queda guardada en el teléfono: al volver a abrir la app
+   entra directo, hasta que la persona toque "Cerrar sesión" (⎋).
+====================================================================== */
+const SESSION_KEY = 'luchoGymSesion';
+function guardarSesion(){
+  try{
+    if(state.role==='admin') localStorage.setItem(SESSION_KEY, JSON.stringify({tipo:'admin'}));
+    else localStorage.setItem(SESSION_KEY, JSON.stringify({tipo:'alumno', uid:state.user.uid}));
+  }catch(e){}
+}
+function borrarSesion(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+function restaurarSesion(){
+  let ses = null;
+  try{ ses = JSON.parse(localStorage.getItem(SESSION_KEY)); }catch(e){}
+  if(!ses) return false;
+  if(ses.tipo==='admin'){
+    state.user = {uid:'admin-luciano'};
+    state.profile = {nombre:'Luciano',apellido:'(Admin)',rol:'admin'};
+    state.role = 'admin';
+    enterApp();
+    return true;
+  }
+  if(ses.tipo==='alumno' && ses.uid && DB.usuarios[ses.uid] && DB.usuarios[ses.uid].claimed){
+    state.user = {uid:ses.uid};
+    state.profile = DB.usuarios[ses.uid];
+    state.role = 'alumno';
+    enterApp();
+    return true;
+  }
+  borrarSesion(); // la cuenta ya no existe
+  return false;
+}
+
 async function doRegister(){
   hideAuthErr();
   const rosterUid = document.getElementById('regRosterSelect').value;
@@ -505,6 +540,7 @@ async function doRegister(){
   state.user = {uid:rosterUid};
   state.profile = DB.usuarios[rosterUid];
   state.role = 'alumno';
+  guardarSesion();
   enterApp();
 }
 
@@ -518,11 +554,13 @@ function doLogin(){
   state.user = {uid:match[0]};
   state.profile = match[1];
   state.role = 'alumno';
+  guardarSesion();
   enterApp();
 }
 
 function doLogout(){
-  stopPolling();
+  if(!confirm('¿Cerrar sesión?')) return;
+  borrarSesion();
   state.user=null; state.role=null; state.profile=null;
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('screen-auth').classList.add('active');
@@ -537,6 +575,7 @@ function doAdminLogin(){
   state.user = {uid:'admin-luciano'};
   state.profile = {nombre:'Luciano',apellido:'(Admin)',rol:'admin'};
   state.role = 'admin';
+  guardarSesion();
   enterApp();
 }
 
@@ -547,6 +586,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   await loadAll();
   rebuildStateRefs();
   attachRealtime();
+  if(restaurarSesion()) return;
   if(document.getElementById('tabRegister').classList.contains('active')) loadRosterForRegister();
 });
 
