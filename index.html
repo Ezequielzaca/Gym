@@ -86,11 +86,20 @@ input,select,textarea{font-family:inherit;}
 .rank-bar > div{height:100%;background:linear-gradient(90deg,var(--accent),#ffe066);}
 
 input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
-  width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:14.5px;outline:none;
+  width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:16px;outline:none;
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 label.field{display:block;margin-bottom:12px;}
 label.field span{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+
+/* ---------- hero + estadísticas ---------- */
+.hero-card{background:linear-gradient(135deg,#1e232e,#14171f);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.hero-card .saludo{font-family:'Bebas Neue';font-size:26px;line-height:1;}
+.hero-card .fecha{color:var(--muted);font-size:12px;margin-top:3px;text-transform:capitalize;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.stat{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center;}
+.stat .val{font-family:'Bebas Neue';font-size:23px;color:var(--accent);line-height:1;}
+.stat .lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
 
 /* ---------- auth ---------- */
 #screen-auth{max-width:400px;padding-top:8vh;}
@@ -128,8 +137,9 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 .list-item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);}
 .list-item:last-child{border-bottom:none;}
 .exercise-block{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--panel-2);}
-.set-row{display:grid;grid-template-columns:28px 1fr 1fr 30px;gap:8px;align-items:center;margin-bottom:6px;}
-.set-row .idx{color:var(--muted);font-size:12px;font-family:'Roboto Mono';text-align:center;}
+.set-row{display:grid;grid-template-columns:30px 1fr 1fr 30px;gap:8px;align-items:center;margin-bottom:6px;}
+.set-row .idx{width:26px;height:26px;border-radius:50%;background:var(--panel);border:1.5px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-family:'Roboto Mono';font-weight:700;margin:0 auto;}
+.set-row input{padding:9px 8px;text-align:center;}
 .remove-x{width:26px;height:26px;border-radius:7px;background:rgba(255,77,77,.12);color:var(--danger);border:none;font-size:13px;}
 .fab{position:fixed;bottom:86px;right:18px;z-index:55;width:56px;height:56px;border-radius:16px;background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;border:none;font-size:26px;box-shadow:0 8px 20px rgba(255,195,0,.4);}
 .empty{text-align:center;padding:30px 10px;color:var(--muted);}
@@ -140,6 +150,7 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 .cal-cell .dots i{width:5px;height:5px;border-radius:50%;display:block;}
 .cal-cell .dots i.d-log{background:var(--ok);}
 .cal-cell .dots i.d-plan{background:#5aa9ff;}
+.cal-cell.has-log{background:rgba(74,209,135,.16);border-color:rgba(74,209,135,.5);color:var(--ok);font-weight:700;}
 .cal-cell.today{background:linear-gradient(145deg,var(--accent),#e6a400);color:#231a00;font-weight:700;box-shadow:0 4px 12px rgba(255,195,0,.35);}
 .cal-cell.today .dots i.d-log{background:#175c36;}
 .cal-cell.today .dots i.d-plan{background:#1d4e85;}
@@ -223,6 +234,7 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 
   <!-- ---------- ALUMNO: INICIO ---------- -->
   <div id="screen-alumno-home" class="screen">
+    <div class="hero-card" id="alumnoHero" style="margin-top:14px;"></div>
     <div class="section-title">Hoy</div>
     <div class="card" id="alumnoTodayCard"></div>
     <div class="section-title">Próximas actividades</div>
@@ -263,6 +275,7 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 
   <!-- ---------- ADMIN: INICIO ---------- -->
   <div id="screen-admin-home" class="screen">
+    <div class="hero-card" id="adminHero" style="margin-top:14px;"></div>
     <div class="section-title">Resumen de hoy</div>
     <div id="adminTodaySummary"></div>
     <div class="section-title">🏆 Top del mes</div>
@@ -282,6 +295,7 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
   <div id="screen-admin-detalle" class="screen">
     <button class="btn btn-ghost btn-sm" onclick="showScreen(state.role==='admin'?'admin-alumnos':'alumno-home')" style="margin:16px 0 4px;">‹ Volver</button>
     <div class="section-title" id="detalleNombre">Alumno</div>
+    <div class="hero-card" id="detStats" style="padding:12px;"></div>
     <div class="seg">
       <button class="active" onclick="setDetView('calendario',this)">Calendario</button>
       <button onclick="setDetView('records',this)">Récords</button>
@@ -659,6 +673,18 @@ function refreshCurrentScreen(){
 function renderAlumnoHome(){
   const uidA = state.user.uid;
   const fecha = todayStr();
+  // hero con saludo y stats del mes
+  const hero = document.getElementById('alumnoHero');
+  const st = statsMes(uidA);
+  const hoyLabel = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  hero.innerHTML = `
+    <div class="saludo">Hola, ${state.profile.nombre} 👋</div>
+    <div class="fecha">${hoyLabel}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="val">${st.dias}</div><div class="lbl">Entrenos<br>del mes</div></div>
+      <div class="stat"><div class="val">${fmtVol(st.volumen)}</div><div class="lbl">Volumen<br>(kg)</div></div>
+      <div class="stat"><div class="val">${Object.keys(calcularRecords(uidA)).length}</div><div class="lbl">Récords<br>personales</div></div>
+    </div>`;
   const planHoy = (state.planificacion[uidA]||{})[fecha];
   const regHoy = (state.registros[uidA]||{})[fecha];
   const bloquesPlan = getBloques(planHoy);
@@ -704,7 +730,7 @@ function renderBloqueResumenHTML(bloque){
 function renderEjercicioResumenLinea(ej){
   const pills = (ej.series||[]).map(s=>`<span class="set-pill"><b>${s.peso!==''&&s.peso!=null?s.peso+' KG':'—'}</b>${s.reps!==''&&s.reps!=null?s.reps+' REP':''}</span>`).join('');
   return `<div class="list-item" style="border-color:var(--line);align-items:flex-start;">
-    <div class="avatar" style="background:var(--accent-dim);color:var(--accent);">🏋️</div>
+    <div class="avatar" style="background:var(--accent-dim);color:var(--accent);font-size:17px;">${iconoEjercicio(ej.ejercicioId)}</div>
     <div style="flex:1;">
       <div style="font-weight:700;font-size:14px;">${nombreEjercicio(ej.ejercicioId)}</div>
       <div class="pill-row">${pills}</div>
@@ -713,6 +739,37 @@ function renderEjercicioResumenLinea(ej){
   </div>`;
 }
 function nombreEjercicio(id){ return state.ejercicios[id]?.nombre || 'Ejercicio'; }
+const CAT_ICONS = {"Calentamiento":"🔥","Abdominales":"🧱","Espinales/Lumbares":"🧘","Piernas":"🦵","Pecho/Banco":"🏋️","Espalda":"🚣","Hombro":"🤸","Bíceps":"💪","Tríceps":"🦾","CrossFit/Funcional":"⚡","Circuito":"🔁"};
+function iconoEjercicio(id){ return CAT_ICONS[state.ejercicios[id]?.categoria] || '🏋️'; }
+
+/* ======================================================================
+   ESTADÍSTICAS (volumen levantado y días entrenados)
+====================================================================== */
+function volumenDia(dia){
+  let v = 0;
+  getBloques(dia).forEach(b=>(b.ejercicios||[]).forEach(ej=>(ej.series||[]).forEach(s=>{
+    v += (parseFloat(s.peso)||0) * (parseFloat(s.reps)||0);
+  })));
+  return v;
+}
+function statsMes(uidX){
+  const pref = todayStr().slice(0,7);
+  const regs = state.registros[uidX]||{};
+  let dias = 0, volumen = 0, ejercicios = 0;
+  Object.entries(regs).forEach(([f,dia])=>{
+    if(!f.startsWith(pref)) return;
+    const bloques = getBloques(dia);
+    if(!bloques.length) return;
+    dias++;
+    volumen += volumenDia(dia);
+    bloques.forEach(b=> ejercicios += (b.ejercicios||[]).length);
+  });
+  return {dias, volumen, ejercicios};
+}
+function fmtVol(v){
+  if(v>=1000) return (v/1000).toFixed(1).replace('.0','')+'k';
+  return String(Math.round(v));
+}
 
 /* ======================================================================
    RANKING MENSUAL DE ASISTENCIAS
@@ -897,7 +954,10 @@ function renderEjercicioEditor(bi,ei,ej,showPain){
       <button class="btn btn-teal btn-sm" onclick="applyQuickSeries(${bi},${ei})">Aplicar</button>
     </div>
     ${seriesHtml}
-    <button class="btn btn-ghost btn-sm" onclick="addSet(${bi},${ei})">+ Serie suelta</button>
+    <div class="row" style="gap:6px;">
+      <button class="btn btn-ghost btn-sm" onclick="addSet(${bi},${ei})">+ Serie</button>
+      <button class="btn btn-ghost btn-sm" onclick="dupSet(${bi},${ei})">⧉ Repetir última</button>
+    </div>
     ${showPain?`<div class="pain-toggle">
       <div class="switch ${ej.dolor?'on':''}" onclick="togglePainEditor(${bi},${ei})"><div class="dot"></div></div>
       <span class="small">Le costó / usó menos peso por molestia</span>
@@ -915,6 +975,12 @@ function addEjercicioBloque(bi){
 function removeEjercicioBloque(bi,ei){ editorState.bloques[bi].ejercicios.splice(ei,1); renderEditorBloques(); }
 function setEjercicio(bi,ei,val){ editorState.bloques[bi].ejercicios[ei].ejercicioId = val; }
 function addSet(bi,ei){ editorState.bloques[bi].ejercicios[ei].series.push({reps:'',peso:''}); renderEditorBloques(); }
+function dupSet(bi,ei){
+  const series = editorState.bloques[bi].ejercicios[ei].series;
+  const last = series[series.length-1];
+  series.push(last ? {reps:last.reps, peso:last.peso} : {reps:'',peso:''});
+  renderEditorBloques();
+}
 function removeSet(bi,ei,si){ editorState.bloques[bi].ejercicios[ei].series.splice(si,1); renderEditorBloques(); }
 function setSetVal(bi,ei,si,field,val){ editorState.bloques[bi].ejercicios[ei].series[si][field] = val; }
 function togglePainEditor(bi,ei){ const ej = editorState.bloques[bi].ejercicios[ei]; ej.dolor = !ej.dolor; renderEditorBloques(); }
@@ -1029,7 +1095,7 @@ function renderCalendar(uid, monthDate, labelId, dowId, gridId, detailId, onSele
     const hasPlan = !!plan[dateStr];
     const isToday = dateStr===todayStr();
     const dots = (hasLog||hasPlan) ? `<span class="dots">${hasLog?'<i class="d-log"></i>':''}${hasPlan?'<i class="d-plan"></i>':''}</span>` : `<span class="dots"></span>`;
-    html += `<div class="cal-cell ${isToday?'today':''}" onclick="(${onSelect.toString()})('${dateStr}')"><span>${d}</span>${dots}</div>`;
+    html += `<div class="cal-cell ${hasLog?'has-log':''} ${isToday?'today':''}" onclick="(${onSelect.toString()})('${dateStr}')"><span>${d}</span>${dots}</div>`;
   }
   grid.innerHTML = html;
   const detail = document.getElementById(detailId);
@@ -1038,7 +1104,8 @@ function renderCalendar(uid, monthDate, labelId, dowId, gridId, detailId, onSele
   const diaPlan = plan[sel];
   const bloquesReg = getBloques(diaReg);
   const bloquesPlan = getBloques(diaPlan);
-  let out = `<b>${new Date(sel+'T00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</b>`;
+  const volSel = diaReg ? volumenDia(diaReg) : 0;
+  let out = `<div class="row between"><b>${new Date(sel+'T00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</b>${volSel>0?`<span class="badge ok">Σ ${fmtVol(volSel)} kg</span>`:''}</div>`;
   let huboAlgo = false;
   if(bloquesPlan.length){
     huboAlgo = true;
@@ -1065,9 +1132,26 @@ function renderCalendar(uid, monthDate, labelId, dowId, gridId, detailId, onSele
 function renderAdminHome(){
   const wrap = document.getElementById('adminTodaySummary');
   const uids = Object.keys(state.roster||{});
+  // hero con stats globales del gimnasio
+  const hero = document.getElementById('adminHero');
+  const hoy = todayStr();
+  let entrenosMes = 0, volumenMes = 0, activosHoy = 0;
+  uids.forEach(uidX=>{
+    const st = statsMes(uidX);
+    entrenosMes += st.dias; volumenMes += st.volumen;
+    const regHoy = (state.registros[uidX]||{})[hoy];
+    if(regHoy && getBloques(regHoy).length) activosHoy++;
+  });
+  hero.innerHTML = `
+    <div class="saludo">Hola, Lucho 👋</div>
+    <div class="fecha">${new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="val">${activosHoy}/${uids.length}</div><div class="lbl">Entrenaron<br>hoy</div></div>
+      <div class="stat"><div class="val">${entrenosMes}</div><div class="lbl">Entrenos<br>del mes</div></div>
+      <div class="stat"><div class="val">${fmtVol(volumenMes)}</div><div class="lbl">Volumen<br>(kg)</div></div>
+    </div>`;
   renderRankingMes('adminRankingMes');
   if(!uids.length){ wrap.innerHTML=`<div class="empty"><div class="ic">👥</div>Todavía no agregaste alumnos.</div>`; return; }
-  const hoy = todayStr();
   wrap.innerHTML = uids.map(uid=>{
     const p = state.roster[uid];
     const reg = (state.registros[uid]||{})[hoy];
@@ -1155,6 +1239,13 @@ function setDetView(v,btn){
 function detCalShift(dir){ state.detCalMonth.setMonth(state.detCalMonth.getMonth()+dir); renderDetalle(); }
 function renderDetalle(){
   if(!state.detUid) return;
+  const st = statsMes(state.detUid);
+  document.getElementById('detStats').innerHTML = `
+    <div class="stat-grid" style="margin-top:0;">
+      <div class="stat"><div class="val">${st.dias}</div><div class="lbl">Entrenos<br>del mes</div></div>
+      <div class="stat"><div class="val">${fmtVol(st.volumen)}</div><div class="lbl">Volumen<br>(kg)</div></div>
+      <div class="stat"><div class="val">${st.ejercicios}</div><div class="lbl">Ejercicios<br>del mes</div></div>
+    </div>`;
   if(state.detView==='calendario'){
     renderCalendar(state.detUid, state.detCalMonth, 'detCalLabel','detCalDowRow','detCalGrid','detDayDetail', d=>{ state.detSelectedDate=d; renderDetalle(); }, state.detSelectedDate, true);
   } else {
