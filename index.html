@@ -6,6 +6,8 @@
 <title>Lucho Gym · Registro de Entrenamiento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --bg:#0d0f14;
@@ -327,24 +329,26 @@ label.field span{display:block;font-size:11.5px;color:var(--muted);text-transfor
 
 <script>
 /* ======================================================================
-   ALMACENAMIENTO (versión de prueba, sin Firebase)
-   Esta versión guarda todo con window.storage (persistencia propia de
-   los artifacts de Claude) para que puedas probar la app ya mismo.
-   Es una data compartida entre quien use este artifact, y las
-   contraseñas no van encriptadas: usala solo para probar el flujo con
-   Luciano y algún alumno de prueba. Cuando tengas el proyecto de
-   Firebase armado, retomamos la versión conectada a Firebase.
+   FIREBASE REALTIME DATABASE — conectado al proyecto gym-lucho
+   Como la app solo usa Realtime Database (sin Auth ni Storage),
+   alcanza con la databaseURL para inicializar.
 ====================================================================== */
+const firebaseConfig = {
+  databaseURL: "https://gym-lucho-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const fdb = firebase.database();
+
 const DB = { usuarios:{}, ejercicios:{}, registros:{}, planificacion:{} };
 let dbReady = false;
 
 async function storageGet(key){
-  try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : null; }
-  catch(e){ return null; }
+  try{ const snap = await fdb.ref(key).once('value'); return snap.val(); }
+  catch(e){ console.error('No se pudo leer', key, e); return null; }
 }
 async function storageSet(key, obj){
-  try{ await window.storage.set(key, JSON.stringify(obj), true); }
-  catch(e){ console.error('No se pudo guardar', key, e); }
+  try{ await fdb.ref(key).set(obj); }
+  catch(e){ console.error('No se pudo guardar', key, e); alert('Error de conexión con la base de datos. Revisá tu internet e intentá de nuevo.'); }
 }
 async function loadAll(){
   DB.usuarios = (await storageGet('usuarios')) || {};
@@ -358,6 +362,22 @@ async function loadAll(){
     await storageSet('ejercicios', DB.ejercicios);
   }
   dbReady = true;
+}
+/* Escucha en tiempo real: cualquier cambio (de Lucho o de un alumno)
+   se refleja al instante en todos los dispositivos conectados. */
+function attachRealtime(){
+  ['usuarios','ejercicios','registros','planificacion'].forEach(k=>{
+    fdb.ref(k).on('value', snap=>{
+      DB[k] = snap.val() || {};
+      dbReady = true;
+      rebuildStateRefs();
+      if(state.user) refreshCurrentScreen();
+      if(k==='usuarios'){
+        const tabReg = document.getElementById('tabRegister');
+        if(tabReg && tabReg.classList.contains('active')) loadRosterForRegister();
+      }
+    });
+  });
 }
 function rebuildStateRefs(){
   state.roster = DB.usuarios;
@@ -526,6 +546,7 @@ function doAdminLogin(){
 window.addEventListener('DOMContentLoaded', async ()=>{
   await loadAll();
   rebuildStateRefs();
+  attachRealtime();
   if(document.getElementById('tabRegister').classList.contains('active')) loadRosterForRegister();
 });
 
@@ -539,22 +560,11 @@ function enterApp(){
   document.getElementById('fabLoad').classList.toggle('hidden', state.role!=='alumno');
   buildBottomNav();
   showScreen(state.role==='admin' ? 'admin-home' : 'alumno-home');
-  startPolling();
 }
 
-/* Como esta versión de prueba no tiene Firebase en tiempo real, cada
-   cierto tiempo volvemos a leer el almacenamiento compartido para que
-   los cambios de Luciano y del alumno se reflejen sin recargar la página. */
-let pollTimer = null;
-function startPolling(){
-  if(pollTimer) return;
-  pollTimer = setInterval(async ()=>{
-    await loadAll();
-    rebuildStateRefs();
-    refreshCurrentScreen();
-  }, 15000);
-}
-function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+/* Con Firebase en tiempo real el refresco es automático; este botón
+   queda como opción manual por si hiciera falta forzar una recarga. */
+function stopPolling(){}
 async function manualRefresh(){
   const btn = event && event.currentTarget;
   if(btn) btn.style.opacity = '.4';
